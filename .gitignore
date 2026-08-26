@@ -369,3 +369,6 @@ vite.config.ts.timestamp-*
 
 # Turbo
 .turbo/
+
+# Not ignore
+!apps/web/src/lib
