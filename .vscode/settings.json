@@ -1,0 +1,35 @@
+{
+  "workbench.colorCustomizations": {
+    "activityBarBadge.background": "#ff4fd8",
+    "activityBarBadge.foreground": "#ffffff",
+    "activityBar.activeBorder": "#00c8ff",
+    "statusBarItem.hoverBackground": "#7b61ff33",
+    "commandCenter.border": "#00c8ff99",
+    "sash.hoverBorder": "#ff4fd8",
+    "editorCursor.foreground": "#00e5ff",
+    "editorLineNumber.activeForeground": "#ff4fd8",
+    "editorBracketHighlight.foreground1": "#7b61ff",
+    "editorBracketHighlight.foreground2": "#00c8ff",
+    "editorBracketHighlight.foreground3": "#ff4fd8",
+    "editorSuggestWidget.highlightForeground": "#00e5ff",
+    "tab.activeBorderTop": "#00c8ff",
+    "tab.activeModifiedBorder": "#ff4fd8",
+    "panel.border": "#7b61ff",
+    "sideBarSectionHeader.border": "#7b61ff55",
+    "focusBorder": "#00c8ff",
+    "list.highlightForeground": "#00e5ff",
+    "textLink.foreground": "#00c8ff",
+    "button.background": "#7b61ff",
+    "button.hoverBackground": "#8e75ff"
+  },
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.format.enable": true,
+  "eslint.codeActionsOnSave.mode": "all",
+  "eslint.useFlatConfig": true,
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "prettier.enable": true
+}
