@@ -1,0 +1,23 @@
+{
+  "name": "@ca/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js"
+  ],
+  "dependencies": {
+    "eslint-plugin-simple-import-sort": "^12.1.1"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0",
+    "typescript-eslint": "^8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.9.0",
+    "typescript-eslint": "^8.67.0"
+  }
+}

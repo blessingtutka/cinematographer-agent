@@ -1,0 +1,5 @@
+{
+  "apps/web/**/*.{ts,tsx,js,jsx,mjs,cjs}": "pnpm --filter web exec eslint --fix",
+  "packages/types/**/*.{ts,tsx,js,jsx,mjs,cjs}": "pnpm --filter @ca/shared-types exec eslint --fix",
+  "*.{json,md,css}": "pnpm exec prettier --write"
+}

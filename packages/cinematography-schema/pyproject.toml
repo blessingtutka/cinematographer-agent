@@ -1,0 +1,27 @@
+[project]
+name = "cinematography-schema"
+version = "0.1.0"
+description = "Pydantic v2 schemas for the Cinematographer Agent platform"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cinematography_schema"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "hypothesis>=6.0",
+]
