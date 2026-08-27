@@ -1,16 +1,21 @@
 import "./App.css"
 
 import { BrowserRouter, useRoutes } from "react-router-dom"
+import { Toaster } from "sonner"
 
+import { ThemeProvider } from "@/providers/theme.provider"
 import { UserProvider } from "@/providers/user.provider"
 import { routes } from "@/routes"
 
 function App() {
   return (
     <BrowserRouter>
-      <UserProvider>
-        <AppRoutes />
-      </UserProvider>
+      <ThemeProvider>
+        <UserProvider>
+          <AppRoutes />
+          <Toaster position="bottom-right" richColors />
+        </UserProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }
