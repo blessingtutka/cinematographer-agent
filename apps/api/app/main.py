@@ -3,11 +3,13 @@ import logging
 import time
 
 from fastapi import FastAPI, Request, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.base import get_engine
 from app.drone.manager import DroneManager
 from app.drone.virtual_drone import VirtualDrone
 from app.simulation.websocket import WebSocketManager
+from app.config import get_settings
 from app.routers import drones, health, scenes, simulations
 from cinematography_schema.schema import Vector3
 
@@ -31,6 +33,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Cinematographer Agent API", version="0.1.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in get_settings().cors_origins.split(",") if origin.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
