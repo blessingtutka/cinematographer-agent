@@ -23,15 +23,6 @@ If `scene_analysis.style_reference` is set (e.g. "Denis Villeneuve", "give it
 a Fincher feel"), an additional topic researches that director's known
 blocking/lensing/movement habits, letting the Cinematographer_Agent adapt
 its shot choices to a requested visual style instead of a generic default.
-
-Error mapping / fallback behavior
---------------------------------------------------
-- Parallel returns zero results for every topic  → proceed with
-  `ResearchContext(research_sources=[])`, no warning (Req 3.4).
-- Parallel does not respond within 10s overall    → proceed with
-  `ResearchContext(research_sources=[], research_warning=...)` (Req 3.5).
-- An individual topic's call errors (non-timeout) → that topic is dropped
-  and logged; does not fail the whole research pass.
 """
 
 from __future__ import annotations
@@ -151,7 +142,7 @@ def _build_topics(scene_analysis: SceneAnalysis) -> list[tuple[str, list[str]]]:
     the canonical coverage pattern for two-person dialogue.
     """
     topics: list[tuple[str, list[str]]] = []
-    two_person = len(scene_analysis.characters) == 2
+    character_count = len(scene_analysis.characters)
 
     # Style-matching topic first
     style_reference = getattr(scene_analysis, "style_reference", None)
@@ -170,8 +161,10 @@ def _build_topics(scene_analysis: SceneAnalysis) -> list[tuple[str, list[str]]]:
                 [f"{tone.value.lower()} scene coverage", f"{tone.value.lower()} scene camera technique"],
             ),
         )
-        if two_person:
-            keywords = ["shot reverse shot two-person"] + keywords[:2]
+        if 2 <= character_count <= 4:
+            keywords = ["shot reverse shot dialogue"] + keywords[:2]
+        elif character_count >= 5:
+            keywords = ["master shot ensemble coverage"] + keywords[:2]
         topics.append((objective, keywords))
 
     for beat in scene_analysis.cinematic_beats:

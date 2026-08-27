@@ -33,3 +33,8 @@ class ShotPlanValidationError(InternalProcessingError):
         self, message: str = "ShotPlan validation failed after all attempts"
     ) -> None:
         super().__init__(message)
+        
+class InvalidDroneAssignmentError(ValueError):
+    """Raised when a generated Shot references a drone name not present in
+    the provided drone_inventory. Caught alongside ValidationError in the
+    retry loop — see module docstring."""
