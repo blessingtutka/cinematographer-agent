@@ -53,3 +53,26 @@ class VirtualDrone(Drone):
         self.trajectory_progress = 0.0
         self.active_shot = None
         self.is_recording = False
+
+    def advance(self, elapsed_seconds: float) -> bool:
+        """Advance the active trajectory and report whether the shot finished."""
+        if self.active_shot is None:
+            return False
+        self.trajectory_progress = min(
+            1.0,
+            self.trajectory_progress + elapsed_seconds / self.active_shot.duration_seconds,
+        )
+        if self.trajectory and len(self.trajectory.points) > 1:
+            start = self.trajectory.points[0]
+            end = self.trajectory.points[-1]
+            progress = self.trajectory_progress
+            self.current_position = Vector3(
+                x=start.x + (end.x - start.x) * progress,
+                y=start.y + (end.y - start.y) * progress,
+                z=start.z + (end.z - start.z) * progress,
+            )
+        if self.trajectory_progress >= 1.0:
+            self.active_shot = None
+            self.is_recording = False
+            return True
+        return False
