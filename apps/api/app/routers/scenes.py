@@ -109,7 +109,12 @@ async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_d
 @router.get("/{scene_id}", response_model=SceneAnalysis)
 async def get_scene(scene_id: str, db: AsyncSession = Depends(get_db)) -> SceneAnalysis:
     """Fetch a previously analyzed scene. 404 if it doesn't exist."""
-    scene_row = await _fetch_scene_row_or_404(scene_id, db)
+    try:
+        scene_row = await _fetch_scene_row_or_404(scene_id, db)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to read scene {scene_id}: {exc}") from exc
     return _parse_scene_analysis(scene_row)
 
 
@@ -168,8 +173,14 @@ async def get_shots(scene_id: str, db: AsyncSession = Depends(get_db)) -> list[S
     """Return the ordered list of Shots for a scene's persisted ShotPlan.
     404 if no ShotPlan exists; 500 if the persisted plan can't be
     read."""
-    result = await db.execute(select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id))
-    plan_row = result.scalar_one_or_none()
+    try:
+        result = await db.execute(select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id))
+        plan_row = result.scalar_one_or_none()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read ShotPlan for scene {scene_id}: {exc}",
+        ) from exc
     if plan_row is None:
         raise HTTPException(status_code=404, detail=f"No ShotPlan exists for scene {scene_id}")
 
