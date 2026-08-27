@@ -2,7 +2,7 @@
  * drone.ts — Types for drone position, orientation, and camera feed state.
  */
 
-import type { Shot } from './shot-plan'
+import type { Shot } from "./shot-plan.js"
 
 export interface Vector3 {
   x: number

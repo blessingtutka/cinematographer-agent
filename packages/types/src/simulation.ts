@@ -2,10 +2,10 @@
  * simulation.ts — Types for simulation lifecycle and WebSocket event stream.
  */
 
-import type { DroneStatus } from './drone'
-import type { CameraMovement,ShotType } from './shot-plan'
+import type { DroneStatus } from "./drone.js"
+import type { CameraMovement, ShotType } from "./shot-plan.js"
 
-export type SimulationState = 'CREATED' | 'RUNNING' | 'PAUSED' | 'COMPLETED'
+export type SimulationState = "CREATED" | "RUNNING" | "PAUSED" | "COMPLETED"
 
 export interface Simulation {
   simulation_id: string
@@ -27,7 +27,7 @@ export interface Simulation {
  * Contains the latest status snapshot for every drone.
  */
 export interface DroneUpdateEvent {
-  type: 'drone_update'
+  type: "drone_update"
   /** ISO 8601 UTC timestamp */
   timestamp: string
   drones: DroneStatus[]
@@ -37,7 +37,7 @@ export interface DroneUpdateEvent {
  * Emitted when a drone begins executing a shot.
  */
 export interface ShotStartedEvent {
-  type: 'shot_started'
+  type: "shot_started"
   shot_id: string
   drone_id: string
   shot_type: ShotType
@@ -49,7 +49,7 @@ export interface ShotStartedEvent {
  * Emitted when a drone finishes executing a shot.
  */
 export interface ShotCompletedEvent {
-  type: 'shot_completed'
+  type: "shot_completed"
   shot_id: string
   drone_id: string
   shot_type: ShotType
@@ -63,7 +63,7 @@ export interface ShotCompletedEvent {
  * for Paused or Completed transitions.
  */
 export interface SimulationStateChangeEvent {
-  type: 'state_change'
+  type: "state_change"
   simulation_id: string
   new_state: SimulationState
   /** ISO 8601 UTC timestamp */
@@ -72,7 +72,4 @@ export interface SimulationStateChangeEvent {
 
 /** Union of all possible WebSocket event payloads */
 export type SimulationEvent =
-  | DroneUpdateEvent
-  | ShotStartedEvent
-  | ShotCompletedEvent
-  | SimulationStateChangeEvent
+  DroneUpdateEvent | ShotStartedEvent | ShotCompletedEvent | SimulationStateChangeEvent
