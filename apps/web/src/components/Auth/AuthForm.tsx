@@ -58,7 +58,7 @@ export function AuthForm({
       </div>
       <form
         onSubmit={handleSubmit}
-        className="mt-6 min-h-0 max-h-[calc(90dvh-20rem)] space-y-4 overflow-y-auto overscroll-contain pr-3 [scrollbar-gutter:stable] sm:max-h-[calc(90dvh-22rem)]"
+        className="mt-6 min-h-0 max-h-[calc(90dvh-20rem)] space-y-4 overflow-y-auto overscroll-contain pr-3 scrollbar-gutter-stable sm:max-h-[calc(90dvh-22rem)]"
       >
         {mode === "register" && (
           <label className="block text-sm font-medium text-foreground">
