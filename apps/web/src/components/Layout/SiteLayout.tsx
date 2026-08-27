@@ -11,7 +11,7 @@ type SiteLayoutProps = {
 
 function SiteLayout({ children, links }: SiteLayoutProps) {
   return (
-    <div className="min-h-screen overflow-x-hidden dark bg-zinc-950 font-sans text-white">
+    <div className="min-h-screen overflow-x-hidden bg-background font-sans text-foreground">
       <Header links={links} />
       {children}
       <Footer />

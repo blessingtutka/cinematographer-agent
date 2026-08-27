@@ -5,7 +5,7 @@ function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border/60 bg-background">
       {/* Subtle cinematic glow */}
-      <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-96 -translate-x-1/2 rounded-full bg-purple-600/10 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Brand */}
@@ -14,8 +14,8 @@ function Footer() {
             to="/"
             className="group inline-flex items-center gap-3 transition-opacity hover:opacity-90"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-purple-600 to-indigo-600 shadow-lg shadow-purple-600/20 transition-transform duration-300 group-hover:scale-105">
-              <Film className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:scale-105">
+              <Film className="h-5 w-5 text-primary-foreground" />
             </div>
 
             <div className="text-left">
