@@ -55,15 +55,14 @@ function Technical() {
             transition={{ duration: 0.6 }}
             className="max-w-3xl"
           >
-            <Badge className="mb-5 border border-blue-600/20 bg-blue-600/20 text-blue-400">
+            <Badge className="mb-5 border border-accent bg-accent text-accent-foreground">
               <Braces className="mr-1.5 h-3.5 w-3.5" />
               Technical Overview
             </Badge>
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
-              A production pipeline for{" "}
-              <span className="text-purple-400">cinematic decisions.</span>
+              A production pipeline for <span className="text-primary">cinematic decisions.</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
               Cinematographer Agent connects structured AI analysis, shared schemas, and a live
               drone simulation into one workflow for exploring and validating shot plans.
             </p>
@@ -79,28 +78,28 @@ function Technical() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.08 }}
                 >
-                  <Card className="h-full border-zinc-800/60 bg-zinc-900/40 p-7 backdrop-blur-sm">
-                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-600/15 text-purple-400">
+                  <Card className="h-full border-border/60 bg-card/70 p-7 backdrop-blur-sm">
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
                       <Icon className="h-6 w-6" />
                     </div>
                     <h2 className="text-xl font-semibold">{item.title}</h2>
-                    <p className="mt-3 leading-relaxed text-zinc-400">{item.description}</p>
+                    <p className="mt-3 leading-relaxed text-muted-foreground">{item.description}</p>
                   </Card>
                 </motion.div>
               )
             })}
           </div>
 
-          <section className="mt-16 border-t border-zinc-800/60 pt-10">
-            <div className="flex items-center gap-3 text-zinc-300">
-              <GitBranch className="h-5 w-5 text-purple-400" />
+          <section className="mt-16 border-t border-border/60 pt-10">
+            <div className="flex items-center gap-3 text-foreground/80">
+              <GitBranch className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Shared technology surface</h2>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               {stack.map((technology) => (
                 <span
                   key={technology}
-                  className="rounded-full border border-zinc-700/60 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-400"
+                  className="rounded-full border border-border/60 bg-muted/60 px-4 py-2 text-sm text-muted-foreground"
                 >
                   {technology}
                 </span>

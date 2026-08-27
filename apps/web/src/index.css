@@ -24,6 +24,12 @@
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
 
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
 
@@ -78,8 +84,12 @@
   --primary: oklch(0.55 0.24 290);
   --primary-foreground: oklch(0.985 0 0);
 
-  --secondary: oklch(0.95 0.025 285);
-  --secondary-foreground: oklch(0.25 0.04 285);
+  --secondary: oklch(0.62 0.22 350);
+  --secondary-foreground: oklch(0.32 0.12 350);
+
+  /* Blue tertiary for cool contrast */
+  --tertiary: oklch(0.58 0.2 250);
+  --tertiary-foreground: oklch(0.98 0.01 250);
 
   --muted: oklch(0.95 0.015 285);
   --muted-foreground: oklch(0.48 0.025 285);
@@ -109,6 +119,10 @@
   --sidebar-border: oklch(0.9 0.015 285);
   --sidebar-ring: oklch(0.55 0.24 290);
 
+  --mesh-primary: rgba(100, 116, 139, 0.08);
+  --mesh-tertiary: rgba(59, 130, 246, 0.05);
+  --mesh-secondary: rgba(236, 72, 153, 0.025);
+
   --radius: 0.75rem;
 }
 
@@ -127,12 +141,16 @@
   --popover-foreground: oklch(0.97 0.01 285);
 
   /* Main purple */
-  --primary: oklch(0.62 0.24 290);
+  --primary: oklch(0.68 0.24 290);
   --primary-foreground: oklch(0.985 0 0);
 
-  /* Dark purple secondary */
-  --secondary: oklch(0.19 0.035 285);
-  --secondary-foreground: oklch(0.94 0.02 285);
+  /* Vibrant pink */
+  --secondary: oklch(0.72 0.22 350);
+  --secondary-foreground: oklch(0.12 0.03 350);
+
+  /* Cool blue */
+  --tertiary: oklch(0.68 0.18 250);
+  --tertiary-foreground: oklch(0.12 0.03 250);
 
   --muted: oklch(0.18 0.025 285);
   --muted-foreground: oklch(0.68 0.025 285);
@@ -163,6 +181,10 @@
   --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.62 0.24 290);
 
+  --mesh-primary: rgba(139, 92, 246, 0.15);
+  --mesh-tertiary: rgba(59, 130, 246, 0.1);
+  --mesh-secondary: rgba(236, 72, 153, 0.06);
+
   --radius: 0.75rem;
 }
 
@@ -189,7 +211,7 @@
   }
 
   ::selection {
-    @apply bg-purple-500/30 text-white;
+    @apply bg-primary/30 text-primary-foreground;
   }
 }
 
@@ -199,9 +221,9 @@
 
 .mesh-bg {
   background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(236, 72, 153, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 60% at 10% 20%, var(--mesh-primary) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, var(--mesh-tertiary) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, var(--mesh-secondary) 0%, transparent 50%);
 }
 
 /* -------------------------------------------------------------------------- */
