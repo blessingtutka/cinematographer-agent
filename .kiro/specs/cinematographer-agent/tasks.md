@@ -79,8 +79,8 @@ Build the CA platform as a monorepo: scaffold the project structure and shared p
     - Tag: `Feature: cinematographer-agent, Property 6: Shot Structural Invariants`
     - _Requirements: 4.2, 4.3, 4.4, 4.5_
 
-- [~] 4. AI agent pipeline
-  - [-] 4.1 Implement `Scene_Analyzer` agent
+- [x] 4. AI agent pipeline
+  - [x] 4.1 Implement `Scene_Analyzer` agent
     - Write `apps/api/app/agents/scene_analyzer.py` — `async def analyze_scene(raw_text: str) -> SceneAnalysis`
     - Call Gemini with `response_schema=SceneAnalysis`; map `GeminiAPIError` → HTTP 502, post-Gemini failures → HTTP 500
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
@@ -91,120 +91,120 @@ Build the CA platform as a monorepo: scaffold the project structure and shared p
     - Tag: `Feature: cinematographer-agent, Property 2: SceneAnalysis Structural Invariants` and `Property 3: SceneAnalysis Round-Trip`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-  - [-] 4.3 Implement `Research_Agent` agent
+  - [x] 4.3 Implement `Research_Agent` agent
     - Write `apps/api/app/agents/research_agent.py` — `async def research(scene_analysis: SceneAnalysis) -> ResearchContext`
     - Build ≥ 2 search queries from emotional tone + cinematic beats; run `asyncio.gather` with 10-second `asyncio.wait_for` timeout
     - On timeout return `ResearchContext(research_sources=[], research_warning="Research data unavailable: timeout")`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 4.4 Write property tests for Research_Agent query invariants (Property 4)
+  - [x] 4.4 Write property tests for Research_Agent query invariants (Property 4)
     - Create `apps/api/tests/properties/test_research_agent.py`
     - For any valid `SceneAnalysis`, assert `_build_queries` returns ≥ 2 non-empty strings
     - Tag: `Feature: cinematographer-agent, Property 4: Research Query Invariants`
     - _Requirements: 3.1, 3.2_
 
-  - [ ] 4.5 Implement `Cinematographer_Agent` agent
+  - [x] 4.5 Implement `Cinematographer_Agent` agent
     - Write `apps/api/app/agents/cinematographer_agent.py` — `async def plan(scene_analysis, research_context, drone_inventory) -> ShotPlan`
     - Call Gemini with full context; validate against `cinematography-schema`; retry up to 2× on `ValidationError`
     - Raise `ShotPlanValidationError` (→ HTTP 500) if all attempts fail
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-  - [ ] 4.6 Wire AI pipeline into `POST /api/scenes/{scene_id}/shot-plan` router
+  - [x] 4.6 Wire AI pipeline into `POST /api/scenes/{scene_id}/shot-plan` router
     - Update `apps/api/app/routers/scenes.py` to call Scene_Analyzer → Research_Agent → Cinematographer_Agent in sequence
     - Persist `SceneAnalysis` and `ShotPlan` to PostgreSQL in a single transaction; roll back on any failure
     - Handle overwrite case (Requirement 4.11) via upsert on `shot_plans.scene_id`
     - _Requirements: 4.7, 4.10, 4.11, 13.1, 13.2, 13.6_
 
-- [ ] 5. Scene and Shot Plan HTTP endpoints
-  - [ ] 5.1 Implement `POST /api/scenes/analyze` and scene GET endpoints
+- [x] 5. Scene and Shot Plan HTTP endpoints
+  - [x] 5.1 Implement `POST /api/scenes/analyze` and scene GET endpoints
     - Implement `POST /api/scenes/analyze` — call `analyze_scene`, persist, return `SceneAnalysis`
     - Implement `GET /api/scenes/{scene_id}` — fetch from DB; 404 if not found
     - Implement `GET /api/scenes/{scene_id}/shots` — fetch ShotPlan, return ordered shots; 404 if no plan; 500 on read failure
     - _Requirements: 2.7, 2.8, 2.9, 4.8, 4.9, 4.12, 13.4, 13.5_
 
-  - [ ] 5.2 Checkpoint — run `uv run pytest apps/api/tests/ -v` and confirm all passing
+  - [x] 5.2 Checkpoint — run `uv run pytest apps/api/tests/ -v` and confirm all passing
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Drone abstraction layer
-  - [ ] 6.1 Implement `Drone` abstract base class and `VirtualDrone`
+- [x] 6. Drone abstraction layer
+  - [x] 6.1 Implement `Drone` abstract base class and `VirtualDrone`
     - Write `apps/api/app/drone/base.py` — `Drone` ABC with `receive_shot`, `move_to`, `get_status`, `get_camera_feed`
     - Write `apps/api/app/drone/virtual_drone.py` — `VirtualDrone(Drone)` with internal position, orientation, trajectory_progress tracking
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 6.2 Implement `DroneManager`
+  - [x] 6.2 Implement `DroneManager`
     - Write `apps/api/app/drone/manager.py` — `DroneManager` with `register`, `dispatch_shot`, `get_all`, `get_by_id`, `get_by_name`, `return_all_home`
     - Inject drones at app startup; never import `VirtualDrone` in `manager.py`
     - On unknown `drone_name`: log error and skip Shot (Requirement 5.9)
     - _Requirements: 5.1, 5.4, 5.8, 5.9_
 
-  - [ ] 6.3 Write property tests for DroneManager dispatch (Property 8)
+  - [x] 6.3 Write property tests for DroneManager dispatch (Property 8)
     - Create `apps/api/tests/properties/test_drone_manager.py`
     - For any ShotPlan and registered set of named drones, assert `receive_shot` is called on exactly the matching drone
     - Tag: `Feature: cinematographer-agent, Property 8: DroneManager Dispatch by Name`
     - _Requirements: 5.4_
 
-  - [ ] 6.4 Implement drone HTTP endpoints
+  - [x] 6.4 Implement drone HTTP endpoints
     - Implement `GET /api/drones` — return all drone statuses
     - Implement `GET /api/drones/{drone_id}` — return status + active shot; 404 if not found; omit `active_shot` when none
     - _Requirements: 5.5, 5.6, 5.7_
 
-- [ ] 7. Simulation engine and WebSocket streaming
-  - [ ] 7.1 Implement `SimulationEngine` with asyncio tick loop
+- [x] 7. Simulation engine and WebSocket streaming
+  - [x] 7.1 Implement `SimulationEngine` with asyncio tick loop
     - Write `apps/api/app/simulation/engine.py` — `SimulationEngine` with `start`, `pause`, `stop`, `_tick_loop` (~100 Hz), `_dispatch_shots`
     - `_tick_loop` publishes `DroneUpdateEvent` to `WebSocketManager` at ≥ 10 Hz
     - On `pause`: freeze all drones at current trajectory position
     - On `stop`: call `drone_manager.return_all_home()`
     - _Requirements: 6.2, 6.3, 6.4, 6.8, 7.1_
 
-  - [ ] 7.2 Implement `WebSocketManager` and WebSocket endpoint
+  - [x] 7.2 Implement `WebSocketManager` and WebSocket endpoint
     - Write `apps/api/app/simulation/websocket.py` — `WebSocketManager` with `connect`, `disconnect`, `broadcast`
     - Register `/ws/simulations/{simulation_id}` endpoint in `main.py`
     - Emit snapshot on connect (Requirement 7.6); close with code 4004 on non-existent simulation (Requirement 7.5)
     - Emit `shot_started`, `shot_completed`, `state_change` events; close connection after `Paused`/`Completed` `state_change`
     - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6_
 
-  - [ ] 7.3 Implement simulation lifecycle HTTP endpoints
+  - [x] 7.3 Implement simulation lifecycle HTTP endpoints
     - Implement `POST /api/simulations` — create Simulation record in Created state; 422 if no ShotPlan exists; persist to DB
     - Implement `POST /api/simulations/{id}/start` — transition Created/Paused → Running; 404/409 guards; start `SimulationEngine.start()`
     - Implement `POST /api/simulations/{id}/pause` — transition Running → Paused; 404/409 guards
     - Implement `POST /api/simulations/{id}/stop` — transition Running/Paused → Completed; 404/409 guards
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.9, 13.3_
 
-  - [ ] 7.4 Write property tests for simulation state machine (Property 9)
+  - [x] 7.4 Write property tests for simulation state machine (Property 9)
     - Create `apps/api/tests/properties/test_simulation_state_machine.py`
     - For each valid/invalid transition, assert correct resulting state or 409 error
     - Tag: `Feature: cinematographer-agent, Property 9: Simulation State Machine Correctness`
     - _Requirements: 6.2, 6.3, 6.4, 6.6, 6.7_
 
-- [ ] 8. Health endpoint and observability
-  - [ ] 8.1 Implement `GET /health` endpoint and request logging middleware
+- [x] 8. Health endpoint and observability
+  - [x] 8.1 Implement `GET /health` endpoint and request logging middleware
     - Write `apps/api/app/routers/health.py` — check DB connectivity and Gemini/Search reachability; return 200 or 503 with dependency breakdown
     - Add `logging` middleware to `main.py` logging method, path, status code, latency at INFO level
     - Add DEBUG-level logging in each AI agent for agent name, input token count, response latency
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 9. Backend checkpoint
-  - [ ] 9.1 Checkpoint — run full backend test suite
+- [x] 9. Backend checkpoint
+  - [x] 9.1 Checkpoint — run full backend test suite
     - Run `uv run pytest apps/api/tests/ -v --tb=short`
     - Ensure all unit tests, property tests, and integration tests pass; ask the user if questions arise.
 
-- [ ] 10. Frontend shared infrastructure
-  - [ ] 10.1 Implement `lib/api-client.ts` HTTP client
+- [x] 10. Frontend shared infrastructure
+  - [x] 10.1 Implement `lib/api-client.ts` HTTP client
     - Write typed fetch wrappers for all HTTP endpoints: `analyzeScene`, `getShotPlan`, `getShots`, `getDrones`, `createSimulation`, `startSimulation`, `pauseSimulation`, `stopSimulation`
     - Import all request/response types from `@ca/shared-types`
     - _Requirements: 14.4_
 
-  - [ ] 10.2 Implement `hooks/use-simulation-ws.ts` WebSocket hook
+  - [x] 10.2 Implement `hooks/use-simulation-ws.ts` WebSocket hook
     - Subscribe to `/ws/simulations/{simulationId}`; parse and dispatch `DroneUpdateEvent`, `ShotStartedEvent`, `ShotCompletedEvent`, `SimulationStateChangeEvent`
     - Establish connection within 2 seconds of simulation entering Running state
     - _Requirements: 7.7_
 
-  - [ ] 10.3 Implement `hooks/use-shot-plan.ts` data hook
+  - [x] 10.3 Implement `hooks/use-shot-plan.ts` data hook
     - Fetch and cache the current `ShotPlan`; expose loading and error states
     - _Requirements: 4.13_
 
-- [ ] 11. Scene input and analysis panels
-  - [ ] 11.1 Implement `SceneInputPanel` component
+- [x] 11. Scene input and analysis panels
+  - [x] 11.1 Implement `SceneInputPanel` component
     - Multi-line textarea capped at 10,000 characters with submit button
     - Client-side validation: error if length < 10 or > 10,000; block submission on error; show/hide loading indicator; disable submit while in-flight
     - Display API error messages on failure
@@ -217,13 +217,13 @@ Build the CA platform as a monorepo: scaffold the project structure and shared p
     - Tag: `Feature: cinematographer-agent, Property 1: Input Validation Completeness`
     - _Requirements: 1.3_
 
-  - [ ] 11.3 Implement `SceneAnalysisPanel` component
+  - [x] 11.3 Implement `SceneAnalysisPanel` component
     - Display characters (name, position), actions, emotions, cinematic beats (description, timestamp, significance score), dialogue lines
     - Import types from `@ca/shared-types`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 12. Shot plan panel and AI transparency UI
-  - [ ] 12.1 Implement `ShotPlanPanel` component
+- [x] 12. Shot plan panel and AI transparency UI
+  - [x] 12.1 Implement `ShotPlanPanel` component
     - List each Shot with type, movement, drone, subject, duration, rationale; show "No rationale provided" fallback
     - Display `cinematographer_notes` at the top of the panel
     - Display `research_sources` (query text + reference count)
