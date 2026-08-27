@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     gemini_api_key: str
     search_api_key: str = ""
     tavily_api_key: str = ""
+    parallel_api_key: str = ""
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
