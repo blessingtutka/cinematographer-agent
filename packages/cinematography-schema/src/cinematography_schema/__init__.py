@@ -3,6 +3,7 @@
 from cinematography_schema.schema import (
     Action,
     CameraMovement,
+    CameraFeed,
     Character,
     CinematicBeat,
     DialogueLine,
@@ -15,12 +16,14 @@ from cinematography_schema.schema import (
     ShotType,
     Simulation,
     SimulationState,
+    Trajectory,
     Vector3,
 )
 
 __all__ = [
     "Action",
     "CameraMovement",
+    "CameraFeed",
     "Character",
     "CinematicBeat",
     "DialogueLine",
@@ -33,5 +36,6 @@ __all__ = [
     "ShotType",
     "Simulation",
     "SimulationState",
+    "Trajectory",
     "Vector3",
 ]

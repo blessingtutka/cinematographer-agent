@@ -57,6 +57,24 @@ class Vector3(BaseModel):
     z: float
 
 
+class Trajectory(BaseModel):
+    """A drone movement path expressed as ordered world-space points."""
+
+    points: list[Vector3] = Field(min_length=1)
+    duration_seconds: float = Field(gt=0)
+
+
+class CameraFeed(BaseModel):
+    """First-person camera state exposed by a drone."""
+
+    drone_id: str
+    drone_name: str
+    position: Vector3
+    orientation: dict
+    fov_degrees: float = Field(gt=0)
+    is_recording: bool
+
+
 class Character(BaseModel):
     """A character identified in a screenplay scene."""
 
