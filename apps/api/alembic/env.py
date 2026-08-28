@@ -39,8 +39,10 @@ target_metadata = Base.metadata
 _async_url: str = get_settings().database_url
 _sync_url: str = re.sub(r"^postgresql\+asyncpg", "postgresql+psycopg2", _async_url)
 
-config.set_main_option("sqlalchemy.url", _sync_url)
-
+config.set_main_option(
+    "sqlalchemy.url",
+    _sync_url.replace("%", "%%"),
+)
 
 # ---------------------------------------------------------------------------
 # Migration runners

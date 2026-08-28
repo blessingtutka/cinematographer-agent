@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Text, func, text
+from sqlalchemy import TIMESTAMP, ForeignKey, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +14,11 @@ class SceneModel(Base):
         UUID(as_uuid=False),
         primary_key=True,
         server_default=text("gen_random_uuid()"),
+    )
+    project_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("projects.project_id", ondelete="CASCADE"),
+        nullable=True,
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)

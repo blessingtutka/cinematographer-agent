@@ -33,6 +33,7 @@ router = APIRouter(prefix="/scenes", tags=["scenes"])
 class SceneAnalyzeRequest(BaseModel):
     raw_text: str = Field(min_length=10, max_length=10000)
     style_reference: str | None = None  # e.g. "Denis Villeneuve", "give it a Fincher feel"
+    project_id: str | None = None
 
 
 # TEMPORARY drone inventory stub — DroneManager doesn't exist yet.
@@ -73,6 +74,12 @@ def _parse_scene_analysis(scene_row: SceneModel) -> SceneAnalysis:
 async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_db)) -> SceneAnalysis:
     """Run Scene_Analyzer on raw screenplay text and persist the result."""
     try:
+        if request.project_id:
+            from app.models.project import ProjectModel
+
+            project = (await db.execute(select(ProjectModel).where(ProjectModel.project_id == request.project_id))).scalar_one_or_none()
+            if project is None:
+                raise HTTPException(status_code=404, detail=f"Project {request.project_id} not found")
         scene_analysis = await analyze_scene(request.raw_text)
     except GeminiError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -85,18 +92,20 @@ async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_d
         scene_analysis = scene_analysis.model_copy(update={"style_reference": request.style_reference})
 
     try:
-        async with db.begin():
-            scene_row = SceneModel(
-                scene_id=scene_analysis.scene_id,
-                title=scene_analysis.title,
-                raw_text=scene_analysis.raw_text,
-                analysis_json=scene_analysis.model_dump(mode="json"),
-            )
-            if hasattr(scene_row, "style_reference"):
-                scene_row.style_reference = request.style_reference
-            db.add(scene_row)
+        scene_row = SceneModel(
+            scene_id=scene_analysis.scene_id,
+            project_id=request.project_id,
+            title=scene_analysis.title,
+            raw_text=scene_analysis.raw_text,
+            analysis_json=scene_analysis.model_dump(mode="json"),
+        )
+        if hasattr(scene_row, "style_reference"):
+            scene_row.style_reference = request.style_reference
+        db.add(scene_row)
+        await db.commit()
 
     except Exception as exc:
+        await db.rollback()
         logger.debug("analyze: DB write failed for scene_id=%s — %s", scene_analysis.scene_id, exc)
         raise HTTPException(
             status_code=500,
