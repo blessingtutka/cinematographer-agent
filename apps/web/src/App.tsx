@@ -1,27 +1,26 @@
 import "./App.css"
 
-import { BrowserRouter, useRoutes } from "react-router-dom"
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import { Toaster } from "sonner"
 
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "@/providers/theme.provider"
 import { UserProvider } from "@/providers/user.provider"
 import { routes } from "@/routes"
 
+const router = createBrowserRouter(routes)
+
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <UserProvider>
-          <AppRoutes />
+    <ThemeProvider>
+      <UserProvider>
+        <TooltipProvider>
+          <RouterProvider router={router} />
           <Toaster position="bottom-right" richColors />
-        </UserProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+        </TooltipProvider>
+      </UserProvider>
+    </ThemeProvider>
   )
-}
-
-function AppRoutes() {
-  return useRoutes(routes)
 }
 
 export default App
