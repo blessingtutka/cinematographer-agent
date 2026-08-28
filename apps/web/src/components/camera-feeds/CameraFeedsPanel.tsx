@@ -18,7 +18,7 @@ export function CameraFeedsPanel({ drones }: CameraFeedsPanelProps) {
         <h2 className="mt-1 text-xl font-semibold">First-person monitors</h2>
       </div>
       <div className="grid gap-3 p-4 sm:grid-cols-[1fr_9rem]">
-        <div className="relative h-64 overflow-hidden bg-slate-950">
+        <div className="relative h-64 overflow-hidden bg-slate-950 ring-1 ring-inset ring-white/10">
           {selected ? (
             <FeedScene drone={selected} />
           ) : (

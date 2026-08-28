@@ -40,7 +40,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
   return (
     <motion.div
       layout
-      className="sticky bottom-4 z-10 flex items-center justify-between gap-4 border border-border/70 bg-card/95 p-3 shadow-xl backdrop-blur"
+      className="sticky bottom-4 z-10 flex items-center justify-between gap-4 border border-border/70 bg-card/95 p-3 text-card-foreground shadow-xl shadow-black/20 backdrop-blur dark:bg-card/95"
     >
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
