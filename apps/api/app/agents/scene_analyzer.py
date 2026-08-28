@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 import warnings
@@ -40,6 +41,8 @@ logger = logging.getLogger(__name__)
 
 # Gemini model to use for scene analysis
 _GEMINI_MODEL = "gemini-3.5-flash"
+_MAX_RATE_LIMIT_RETRIES = 1
+_DEFAULT_RATE_LIMIT_DELAY_SECONDS = 1.0
 
 _SYSTEM_PROMPT = """You are an expert screenplay analyst and cinematographer.
 Analyze the provided screenplay scene and extract structured information.
@@ -130,8 +133,6 @@ def _build_response_schema() -> dict:
                         "timestamp_offset": {"type": "number"},
                         "significance_score": {
                             "type": "integer",
-                            "minimum": 1,
-                            "maximum": 10,
                         },
                     },
                     "required": [
@@ -227,30 +228,44 @@ async def analyze_scene(raw_text: str) -> SceneAnalysis:
     )
 
     start_time = time.monotonic()
+    raw_json: str | None = None
 
-    try:
-        # google-generativeai does not provide a native async generate method,
-        # so we offload the blocking call to a thread executor.
-        model = _get_client()
-        loop = asyncio.get_running_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: model.generate_content(
-                prompt,
-                generation_config=generation_config,
-            ),
-        )
-        raw_json: str = response.text
-    except Exception as exc:
-        elapsed_ms = (time.monotonic() - start_time) * 1000
-        logger.debug(
-            "Scene_Analyzer: Gemini call failed after %.1f ms — %s",
-            elapsed_ms,
-            exc,
-        )
-        raise GeminiError(
-            f"Gemini API error during scene analysis: {exc}"
-        ) from exc
+    for attempt in range(_MAX_RATE_LIMIT_RETRIES + 1):
+        try:
+            # google-generativeai does not provide a native async generate method,
+            # so we offload the blocking call to a thread executor.
+            model = _get_client()
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                ),
+            )
+            raw_json = response.text
+            break
+        except Exception as exc:
+            elapsed_ms = (time.monotonic() - start_time) * 1000
+            logger.debug(
+                "Scene_Analyzer: Gemini call %d/%d failed after %.1f ms — %s",
+                attempt + 1,
+                _MAX_RATE_LIMIT_RETRIES + 1,
+                elapsed_ms,
+                exc,
+            )
+            if "429" not in str(exc) or attempt >= _MAX_RATE_LIMIT_RETRIES:
+                raise GeminiError(
+                    f"Gemini API error during scene analysis: {exc}"
+                ) from exc
+
+            delay_match = re.search(r"retry in ([0-9]+(?:\.[0-9]+)?)s", str(exc), re.IGNORECASE)
+            delay_seconds = float(delay_match.group(1)) if delay_match else _DEFAULT_RATE_LIMIT_DELAY_SECONDS
+            logger.info("Scene_Analyzer: Gemini rate limit; retrying in %.1f seconds", delay_seconds)
+            await asyncio.sleep(delay_seconds)
+
+    if raw_json is None:
+        raise GeminiError("Gemini API returned no scene analysis response")
 
     elapsed_ms = (time.monotonic() - start_time) * 1000
     logger.debug(

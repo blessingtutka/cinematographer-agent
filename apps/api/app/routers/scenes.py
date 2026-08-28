@@ -138,27 +138,27 @@ async def create_shot_plan(scene_id: str, db: AsyncSession = Depends(get_db)) ->
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     try:
-        async with db.begin():
-            result = await db.execute(
-                select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id)
-            )
-            existing = result.scalar_one_or_none()
-            plan_json = shot_plan.model_dump(mode="json")
+        result = await db.execute(
+            select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id)
+        )
+        existing = result.scalar_one_or_none()
+        plan_json = shot_plan.model_dump(mode="json")
 
-            if existing is not None:
-                # Overwrite in place.
-                existing.plan_id = shot_plan.plan_id
-                existing.plan_json = plan_json
-            else:
-                db.add(
-                    ShotPlanModel(
-                        plan_id=shot_plan.plan_id,
-                        scene_id=scene_id,
-                        plan_json=plan_json,
-                    )
+        if existing is not None:
+            # Overwrite in place.
+            existing.plan_id = shot_plan.plan_id
+            existing.plan_json = plan_json
+        else:
+            db.add(
+                ShotPlanModel(
+                    plan_id=shot_plan.plan_id,
+                    scene_id=scene_id,
+                    plan_json=plan_json,
                 )
-        # Commits on clean exit, rolls back on exception.
+                )
+        await db.commit()
     except Exception as exc:
+        await db.rollback()
         logger.debug("shot-plan: DB write failed for scene_id=%s — %s", scene_id, exc)
         raise HTTPException(
             status_code=500,

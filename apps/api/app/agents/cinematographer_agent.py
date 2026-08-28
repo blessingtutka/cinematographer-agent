@@ -31,7 +31,7 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_GEMINI_MODEL = "gemini-1.5-flash"
+_GEMINI_MODEL = "gemini-3.5-flash"
 _MAX_ATTEMPTS = 3  # 1 initial + 2 retries
 
 
@@ -84,8 +84,6 @@ def _build_response_schema() -> dict:
         "properties": {
             "shots": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 20,
                 "items": {
                     "type": "object",
                     "properties": {
