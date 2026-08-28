@@ -231,47 +231,47 @@ Build the CA platform as a monorepo: scaffold the project structure and shared p
     - Highlight selected/hovered Shot with visually distinct border/background; scroll active shot into view during playback
     - _Requirements: 4.13, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 3.7_
 
-- [ ] 13. 3D Director View (React Three Fiber)
-  - [ ] 13.1 Implement `DirectorViewPanel` base R3F canvas
+- [x] 13. 3D Director View (React Three Fiber)
+  - [x] 13.1 Implement `DirectorViewPanel` base R3F canvas
     - Create `components/director-view/DirectorViewPanel.tsx` with `<Canvas>` and OrbitControls from Drei
     - Render static environment stage mesh; orbit, pan, zoom controls
     - _Requirements: 8.1, 8.8_
 
-  - [ ] 13.2 Implement drone and character 3D representations
+  - [x] 13.2 Implement drone and character 3D representations
     - Add `<DroneModel>` component with name label, camera cone FOV indicator, red recording dot, pause visual treatment
     - Add `<CharacterModel>` component positioned from WebSocket state
     - Render trajectory paths as `<Line>` (Drei) for each planned shot
     - _Requirements: 8.1, 8.3, 8.4, 8.5, 8.6, 8.7, 11.6_
 
-  - [ ] 13.3 Wire WebSocket state into Director View animations
+  - [x] 13.3 Wire WebSocket state into Director View animations
     - Subscribe to `useSimulationWS`; animate each drone along its trajectory; cap lag to ≤ 100ms
     - Freeze animations on `Paused` state; update Character positions from events
     - _Requirements: 8.2, 8.7, 8.9_
 
-- [ ] 14. Camera feeds panel
-  - [ ] 14.1 Implement `CameraFeedsPanel` with first-person R3F viewports
+- [x] 14. Camera feeds panel
+  - [x] 14.1 Implement `CameraFeedsPanel` with first-person R3F viewports
     - Create `components/camera-feeds/CameraFeedsPanel.tsx`; default to first drone; allow drone selection via list/thumbnail grid
     - Render first-person `<PerspectiveCamera>` per drone from drone's position/orientation
     - Display on-screen overlay: Shot_Type, Camera_Movement, subject; "Standby" when no active shot
     - _Requirements: 9.1, 9.2, 9.3, 9.8_
 
-  - [ ] 14.2 Implement camera movement animations in feeds
+  - [x] 14.2 Implement camera movement animations in feeds
     - DOLLY_IN/OUT: animate camera forward/backward along depth axis
     - FOLLOW: track character position, keep centered in frame
     - PAN/TILT: apply angular rotation around vertical/horizontal axis
     - ORBIT: circle subject, keep subject centered
     - _Requirements: 9.4, 9.5, 9.6, 9.7_
 
-- [ ] 15. Control bar and simulation controls
-  - [ ] 15.1 Implement `ControlBar` component
+- [x] 15. Control bar and simulation controls
+  - [x] 15.1 Implement `ControlBar` component
     - Play, Pause, Stop buttons with Lucide icons; enable/disable based on simulation state rules
     - Persistent top-level status bar showing simulation state
     - Call `startSimulation`, `pauseSimulation`, `stopSimulation` via `api-client`
     - Animate state transitions with Framer Motion
     - _Requirements: 11.4, 11.5, 11.7, 11.3_
 
-- [ ] 16. Director Control Room root layout
-  - [ ] 16.1 Assemble `app/page.tsx` control room layout
+- [x] 16. Director Control Room root layout
+  - [x] 16.1 Assemble `app/page.tsx` control room layout
     - Compose all panels: SceneInput, SceneAnalysis, ShotPlan, DirectorView, CameraFeeds, ControlBar
     - Apply Tailwind CSS layout so all panels are visible, non-overlapping, and fully functional at ≥ 1280px viewport
     - Consistently use shadcn/ui components and Lucide icons throughout
