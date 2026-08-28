@@ -1,12 +1,16 @@
-import type { SceneAnalysis, ShotPlan } from "@ca/shared-types"
+import type { DroneStatus, SceneAnalysis, ShotPlan, Simulation } from "@ca/shared-types"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
+import { CameraFeedsPanel } from "@/components/camera-feeds/CameraFeedsPanel"
+import { ControlBar } from "@/components/control-bar/ControlBar"
+import { DirectorViewPanel } from "@/components/director-view/DirectorViewPanel"
 import { SceneAnalysisPanel } from "@/components/scene-analysis/SceneAnalysisPanel"
 import { SceneInputPanel } from "@/components/scene-input/SceneInputPanel"
 import { ShotPlanPanel } from "@/components/shot-plan/ShotPlanPanel"
 import { Button } from "@/components/ui/button"
-import { analyzeScene, getShotPlan } from "@/lib/api-client"
+import { useSimulationWS } from "@/hooks/use-simulation-ws"
+import { analyzeScene, getDrones, getShotPlan } from "@/lib/api-client"
 import { useUser } from "@/providers/user.provider"
 
 function Studio() {
@@ -16,6 +20,8 @@ function Studio() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeShotId, setActiveShotId] = useState<string | null>(null)
+  const [drones, setDrones] = useState<DroneStatus[]>([])
+  const [simulation, setSimulation] = useState<Simulation | null>(null)
 
   async function handleAnalyze(rawText: string) {
     setLoading(true)
@@ -24,6 +30,7 @@ function Studio() {
     try {
       const nextAnalysis = await analyzeScene(rawText)
       setAnalysis(nextAnalysis)
+      setDrones(await getDrones())
       setShotPlan(await getShotPlan(nextAnalysis.scene_id))
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "The scene could not be analyzed.")
@@ -31,6 +38,9 @@ function Studio() {
       setLoading(false)
     }
   }
+
+  const { lastEvent } = useSimulationWS(simulation?.simulation_id, simulation?.state === "RUNNING")
+  const liveDrones = lastEvent?.type === "drone_update" ? lastEvent.drones : drones
 
   return (
     <main className="mesh-bg min-h-screen bg-background px-4 pb-12 pt-24 text-foreground sm:px-6 lg:px-8">
@@ -64,6 +74,23 @@ function Studio() {
             plan={shotPlan}
             activeShotId={activeShotId}
             onSelectShot={setActiveShotId}
+          />
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <DirectorViewPanel
+            drones={liveDrones}
+            analysis={analysis}
+            plan={shotPlan}
+            paused={simulation?.state === "PAUSED"}
+          />
+          <CameraFeedsPanel drones={liveDrones} />
+        </div>
+        <div className="mt-5">
+          <ControlBar
+            sceneId={analysis?.scene_id}
+            simulation={simulation}
+            onChange={setSimulation}
+            onError={setError}
           />
         </div>
       </div>
