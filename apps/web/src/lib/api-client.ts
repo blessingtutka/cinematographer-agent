@@ -1,4 +1,12 @@
-import type { DroneStatus, SceneAnalysis, Shot, ShotPlan, Simulation } from "@ca/shared-types"
+import type {
+  DroneStatus,
+  Project,
+  ProjectScene,
+  SceneAnalysis,
+  Shot,
+  ShotPlan,
+  Simulation,
+} from "@ca/shared-types"
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
@@ -23,10 +31,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export function analyzeScene(rawText: string, styleReference?: string) {
+export function analyzeScene(rawText: string, styleReference?: string, projectId?: string) {
   return request<SceneAnalysis>("/api/scenes/analyze", {
     method: "POST",
-    body: JSON.stringify({ raw_text: rawText, style_reference: styleReference }),
+    body: JSON.stringify({
+      raw_text: rawText,
+      style_reference: styleReference,
+      project_id: projectId,
+    }),
   })
 }
 
@@ -82,4 +94,34 @@ export function simulationWebSocketUrl(simulationId: string) {
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
   url.pathname = `/ws/simulations/${encodeURIComponent(simulationId)}`
   return url.toString()
+}
+
+export function getProjects() {
+  return request<Project[]>("/api/projects")
+}
+
+export function createProject(title: string, description: string) {
+  return request<Project>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify({ title, description }),
+  })
+}
+
+export function getProject(projectId: string) {
+  return request<Project>(`/api/projects/${encodeURIComponent(projectId)}`)
+}
+
+export function updateProject(projectId: string, values: { title?: string; description?: string }) {
+  return request<Project>(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(values),
+  })
+}
+
+export function deleteProject(projectId: string) {
+  return request<void>(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" })
+}
+
+export function getProjectScenes(projectId: string) {
+  return request<ProjectScene[]>(`/api/projects/${encodeURIComponent(projectId)}/scenes`)
 }
