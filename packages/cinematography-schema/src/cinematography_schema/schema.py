@@ -12,8 +12,6 @@ from pydantic import BaseModel, Field
 
 
 class ShotType(str, Enum):
-    """Camera framing types for cinematographic shots."""
-
     WIDE = "WIDE"
     MEDIUM = "MEDIUM"
     CLOSE_UP = "CLOSE_UP"
@@ -136,13 +134,28 @@ class Shot(BaseModel):
     rationale: str = Field(min_length=1, max_length=500)
     cinematic_beat_id: Optional[str] = None
 
+# Parallele search
+
+class SourceReference(BaseModel):
+    """A single retrieved web source backing a research query."""
+
+    title: str
+    url: str
+    excerpt: str 
 
 class ResearchSource(BaseModel):
-    """A search query result used to inform cinematography decisions."""
+    """One research query and what it found. `reference_count` stays as a
+    derived property so existing UI code (Requirement 10.4) keeps working
+    unchanged."""
 
     query: str
-    reference_count: int
+    references: list[SourceReference] = Field(default_factory=list)
 
+    @property
+    def reference_count(self) -> int:
+        return len(self.references)
+
+# Shot plans
 
 class ShotPlan(BaseModel):
     """
@@ -188,24 +201,4 @@ class Simulation(BaseModel):
     created_at: str  # ISO 8601 UTC
     updated_at: str
 
-# Parallele search
 
-class SourceReference(BaseModel):
-    """A single retrieved web source backing a research query."""
-
-    title: str
-    url: str
-    excerpt: str  # LLM-optimized excerpt from Parallel, used to ground rationale
-
-
-class ResearchSource(BaseModel):
-    """One research query and what it found. `reference_count` stays as a
-    derived property so existing UI code (Requirement 10.4) keeps working
-    unchanged."""
-
-    query: str
-    references: list[SourceReference] = Field(default_factory=list)
-
-    @property
-    def reference_count(self) -> int:
-        return len(self.references)

@@ -20,6 +20,24 @@ from cinematography_schema.schema import (
     Vector3,
 )
 
+from cinematography_schema.auth import (
+    SubscriptionTier,
+    TIER_PROJECT_LIMITS,
+    RegisterRequest,
+    LoginRequest,
+    TokenPair,
+    LoginResponse,
+    RefreshRequest,
+    TwoFactorLoginVerifyRequest,
+    TwoFactorSetupResponse,
+    TwoFactorEnableRequest,
+    TwoFactorEnableResponse,
+    TwoFactorDisableRequest,
+    BackupCodesRegenerateResponse,
+    UserOut,
+    ProjectQuotaOut
+
+)
 __all__ = [
     "Action",
     "CameraMovement",
@@ -38,4 +56,20 @@ __all__ = [
     "SimulationState",
     "Trajectory",
     "Vector3",
+    # Auth Schema
+    "SubscriptionTier",
+    "TIER_PROJECT_LIMITS",
+    "RegisterRequest",
+    "LoginRequest",
+    "TokenPair",
+    "LoginResponse",
+    "RefreshRequest",
+    "TwoFactorLoginVerifyRequest",
+    "TwoFactorSetupResponse",
+    "TwoFactorEnableRequest",
+    "TwoFactorEnableResponse",
+    "TwoFactorDisableRequest",
+    "BackupCodesRegenerateResponse",
+    "UserOut",
+    "ProjectQuotaOut",
 ]
