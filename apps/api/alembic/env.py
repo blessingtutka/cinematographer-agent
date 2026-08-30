@@ -6,6 +6,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+import alembic_postgresql_enum  # noqa: F401 — registers autogenerate render hooks for Postgres enums
 
 # ---------------------------------------------------------------------------
 # Ensure the 'apps/api' directory is on sys.path so that 'app.*' imports
