@@ -22,14 +22,155 @@
     "button.background": "#7b61ff",
     "button.hoverBackground": "#8e75ff"
   },
+
+  // ============================================================
+  // ESLINT
+  // ============================================================
+
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "eslint.format.enable": true,
-  "eslint.codeActionsOnSave.mode": "all",
-  "eslint.useFlatConfig": true,
+
+  "eslint.format.enable": false,
+
+  "eslint.codeActionsOnSave.mode": "problems",
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ============================================================
+  // FORMATTING
+  // ============================================================
 
   "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "always"
+
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "prettier.enable": true
+
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.pylint",
+    "editor.formatOnSave": true
+  },
+
+  "prettier.enable": true,
+
+  // ============================================================
+  // SEARCH / WATCHER PERFORMANCE
+  // ============================================================
+
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/venv/**": true,
+    "**/__pycache__/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.ruff_cache/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.next/**": true,
+    "**/coverage/**": true,
+    "**/.turbo/**": true,
+    "**/.cache/**": true,
+    "**/.vite/**": true
+  },
+
+  "search.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/.turbo": true,
+    "**/.cache": true,
+    "**/.vite": true
+  },
+
+  // ============================================================
+  // TYPESCRIPT PERFORMANCE
+  // ============================================================
+
+  "js/ts.tsserver.automaticTypeAcquisition.enabled": true,
+
+  "js/ts.tsserver.maxMemory": 4096,
+
+  // ============================================================
+  // PYTHON / PYLANCE
+  // ============================================================
+
+  "python.analysis.exclude": [
+    "**/.*",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**",
+    "**/.mypy_cache/**",
+    "**/.ruff_cache/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/.turbo/**",
+    "**/.vite/**"
+  ],
+
+  "python.analysis.ignore": [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+
+  // ============================================================
+  // GENERAL EDITOR PERFORMANCE
+  // ============================================================
+
+  "editor.codeLens": false,
+  "editor.hover.delay": 300,
+  "editor.semanticHighlighting.enabled": true,
+
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/.turbo": true
+  }
 }
