@@ -10,10 +10,10 @@ from app.drone.manager import DroneManager
 from app.drone.virtual_drone import VirtualDrone
 from app.simulation.websocket import WebSocketManager
 from app.config import get_settings
-from app.routers import drones, health, projects, scenes, simulations
+from app.routers import drones, health, projects, scenes, simulations, auth, two_factor, subscription
 from cinematography_schema.schema import Vector3
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__) 
 
 
 @asynccontextmanager
@@ -55,8 +55,11 @@ async def request_logging_middleware(request: Request, call_next):
     )
     return response
 
-app.include_router(scenes.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(two_factor.router, prefix="/api")
+app.include_router(subscription.router, prefix="/api")
 app.include_router(projects.router, prefix="/api")
+app.include_router(scenes.router, prefix="/api")
 app.include_router(simulations.router, prefix="/api")
 app.include_router(drones.router, prefix="/api")
 app.include_router(health.router)
