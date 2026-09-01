@@ -16,6 +16,7 @@ type AuthFormProps = {
   onPasswordChange: (password: string) => void
   name: string
   password: string
+  disabled?: boolean
 }
 
 export function AuthForm({
@@ -28,6 +29,7 @@ export function AuthForm({
   onPasswordChange,
   name,
   password,
+  disabled = false,
 }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -88,12 +90,12 @@ export function AuthForm({
           <div className="relative mt-2">
             <input
               required
-              minLength={6}
+              minLength={8}
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
               className="h-11 w-full border border-input bg-background px-3 pr-11 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
             />
             <button
               type="button"
@@ -110,7 +112,7 @@ export function AuthForm({
             Confirm password
             <input
               required
-              minLength={6}
+              minLength={8}
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
@@ -124,6 +126,7 @@ export function AuthForm({
         )}
         <Button
           type="submit"
+          disabled={disabled}
           className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/80"
         >
           {mode === "login" ? "Continue to studio" : "Create studio account"}

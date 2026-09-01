@@ -1,79 +1,114 @@
-import { createContext, createElement, type ReactNode, useContext, useState } from "react"
+import {
+  createContext,
+  createElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
+
+import { tokenStorage } from "@/lib/api/token-storage"
+import { authService } from "@/services/auth.service"
 
 export type User = {
   id: string
   email: string
+  full_name: string | null
+  is_active: boolean
+  is_verified: boolean
+  is_2fa_enabled: boolean
+  subscription_tier: "free" | "basic" | "pro" | "enterprise"
+  /** Convenience alias kept for components that read `user.name` */
   name: string
-  avatar?: string
+  avatar: string | null
 }
+
+type LoginResult =
+  { requiresTwoFactor: false } | { requiresTwoFactor: true; preTwoFactorToken: string }
 
 type UserContextValue = {
   user: User | null
   isAuthenticated: boolean
-  signIn: (email: string, password: string) => boolean
-  register: (name: string, email: string, password: string) => void
-  verifyTwoFactor: (code: string) => boolean
-  completeSignIn: (email: string) => void
-  requestPasswordReset: (email: string) => void
-  signOut: () => void
+  isLoading: boolean
+  /** Real API login. Returns 2FA challenge info when needed. */
+  signIn: (email: string, password: string) => Promise<LoginResult>
+  /** Real API register. */
+  register: (email: string, password: string, fullName?: string) => Promise<void>
+  /** Real API 2FA verification step. */
+  verifyTwoFactor: (preTwoFactorToken: string, code: string) => Promise<void>
+  /** Refresh `user` from /auth/me (useful after profile changes). */
+  refreshUser: () => Promise<void>
+  signOut: () => Promise<void>
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined)
-const userStorageKey = "cinematographer.user"
 
-function readStoredUser(): User | null {
-  const storedUser = window.localStorage.getItem(userStorageKey)
-
-  if (!storedUser) {
-    return null
-  }
-
-  try {
-    return JSON.parse(storedUser) as User
-  } catch {
-    window.localStorage.removeItem(userStorageKey)
-    return null
+function mapUser(raw: Awaited<ReturnType<typeof authService.getMe>>): User {
+  return {
+    ...raw,
+    avatar: raw.avatar ?? null,
+    name: raw.full_name ?? raw.email.split("@")[0] ?? "Director",
   }
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(readStoredUser)
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(() => !tokenStorage.getAccessToken())
 
-  function createUser(name: string, email: string) {
-    const nextUser = {
-      id: email,
-      email,
-      name: name || email.split("@")[0] || "Director",
+  // On mount, restore session from stored tokens
+  useEffect(() => {
+    const accessToken = tokenStorage.getAccessToken()
+    if (!accessToken) {
+      return
     }
+    authService
+      .getMe()
+      .then((raw) => setUser(mapUser(raw)))
+      .catch(() => {
+        // Token may be expired/invalid; interceptor will attempt refresh.
+        // If it still fails, clear state.
+        tokenStorage.clear()
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
 
-    window.localStorage.setItem(userStorageKey, JSON.stringify(nextUser))
-    setUser(nextUser)
-  }
-
-  function signIn(email: string, password: string) {
-    return Boolean(email && password)
-  }
-
-  function register(name: string, email: string, password: string) {
-    if (name && email && password) {
-      createUser(name, email)
+  const signIn = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    const result = await authService.login(email, password)
+    if (result.requiresTwoFactor) {
+      return { requiresTwoFactor: true, preTwoFactorToken: result.preTwoFactorToken }
     }
-  }
+    const raw = await authService.getMe()
+    setUser(mapUser(raw))
+    return { requiresTwoFactor: false }
+  }, [])
 
-  function verifyTwoFactor(code: string) {
-    return code === "123456"
-  }
+  const register = useCallback(
+    async (email: string, password: string, fullName?: string): Promise<void> => {
+      await authService.register(email, password, fullName)
+      // After registration users still need to log in; keep them on /auth.
+    },
+    [],
+  )
 
-  function completeSignIn(email: string) {
-    createUser("", email)
-  }
+  const verifyTwoFactor = useCallback(
+    async (preTwoFactorToken: string, code: string): Promise<void> => {
+      await authService.verifyTwoFactor(preTwoFactorToken, code)
+      const raw = await authService.getMe()
+      setUser(mapUser(raw))
+    },
+    [],
+  )
 
-  function requestPasswordReset(_email: string) {}
+  const refreshUser = useCallback(async (): Promise<void> => {
+    const raw = await authService.getMe()
+    setUser(mapUser(raw))
+  }, [])
 
-  function signOut() {
-    window.localStorage.removeItem(userStorageKey)
+  const signOut = useCallback(async (): Promise<void> => {
+    await authService.logout()
     setUser(null)
-  }
+  }, [])
 
   return createElement(
     UserContext.Provider,
@@ -81,11 +116,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
       value: {
         user,
         isAuthenticated: user !== null,
+        isLoading,
         signIn,
         register,
         verifyTwoFactor,
-        completeSignIn,
-        requestPasswordReset,
+        refreshUser,
         signOut,
       },
     },
@@ -95,10 +130,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext)
-
   if (!context) {
     throw new Error("useUser must be used within a UserProvider")
   }
-
   return context
 }

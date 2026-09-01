@@ -3,6 +3,7 @@ import { Navigate, Outlet, type RouteObject, useLocation, useMatches } from "rea
 
 import { AppLayout } from "@/components/Layout"
 import type { AppLayoutProps } from "@/components/Layout/AppLayout"
+import AccountSettings from "@/pages/AccountSettings"
 import ProjectDetail from "@/pages/ProjectDetail"
 import Projects from "@/pages/Projects"
 import Studio from "@/pages/Studio"
@@ -50,6 +51,11 @@ export const privateRoutes: RouteObject[] = [
       {
         path: "/studio",
         element: createElement(Studio),
+      },
+      {
+        path: "/settings",
+        handle: { breadcrumb: [{ label: "settings", link: "/settings" }] },
+        element: createElement(AccountSettings),
       },
     ],
   },

@@ -12,24 +12,25 @@ import { useUser } from "@/providers/user.provider"
 type AuthMode = "login" | "register"
 
 function Auth() {
-  const {
-    isAuthenticated,
-    signIn,
-    register,
-    verifyTwoFactor,
-    completeSignIn,
-    requestPasswordReset,
-  } = useUser()
+  const { isAuthenticated, signIn, register, verifyTwoFactor } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
+
   const [mode, setMode] = useState<AuthMode>("login")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+
+  // 2FA state
   const [twoFactorOpen, setTwoFactorOpen] = useState(false)
+  const [preTwoFactorToken, setPreTwoFactorToken] = useState("")
   const [code, setCode] = useState("")
+
+  // Password reset dialog (frontend-only placeholder — no reset endpoint yet)
   const [resetOpen, setResetOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const destination =
     (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/studio"
@@ -38,34 +39,47 @@ function Auth() {
     return <Navigate to={destination} replace />
   }
 
-  function handleSubmit(event: SubmitEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
-    if (mode === "register") {
-      register(name, email, password)
-      toast.success("Account created", { description: "Your studio workspace is ready." })
-      navigate(destination, { replace: true })
-      return
-    }
-    if (signIn(email, password)) {
-      setTwoFactorOpen(true)
-    } else {
-      toast.error("Enter your email")
+    setIsSubmitting(true)
+
+    try {
+      if (mode === "register") {
+        await register(email, password, name || undefined)
+        toast.success("Account created", {
+          description: "Sign in to access your workspace.",
+        })
+        // Switch to login so the user can sign in immediately
+        setMode("login")
+        setPassword("")
+        return
+      }
+
+      const result = await signIn(email, password)
+      if (result.requiresTwoFactor) {
+        setPreTwoFactorToken(result.preTwoFactorToken)
+        setTwoFactorOpen(true)
+      } else {
+        navigate(destination, { replace: true })
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  function handleVerify(event: SubmitEvent) {
+  async function handleVerify(event: SubmitEvent) {
     event.preventDefault()
-    if (verifyTwoFactor(code)) {
-      completeSignIn(email)
+    setIsSubmitting(true)
+    try {
+      await verifyTwoFactor(preTwoFactorToken, code)
       setTwoFactorOpen(false)
       navigate(destination, { replace: true })
-    } else {
-      toast.error("That authenticator code is not valid")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   function handleReset() {
-    requestPasswordReset(resetEmail)
     setResetOpen(false)
     toast.success("Reset link requested", {
       description: "If the account exists, a link will be sent shortly.",
@@ -108,6 +122,7 @@ function Auth() {
           onPasswordChange={setPassword}
           onModeChange={setMode}
           onSubmit={handleSubmit}
+          disabled={isSubmitting}
         />
         {mode === "login" && (
           <button
@@ -124,8 +139,7 @@ function Auth() {
         )}
         <p className="mt-8 shrink-0 border-t border-border pt-5 text-center text-xs leading-5 text-muted-foreground">
           <LockKeyhole className="mr-1 inline size-3" />
-          Placeholder auth API. Two-factor code for local testing:{" "}
-          <span className="text-card-foreground">123456</span>
+          Secured with JWT tokens and optional two-factor authentication.
         </p>
       </section>
       <TwoFactorDialog
