@@ -3,12 +3,7 @@ import { motion } from "framer-motion"
 import { CircleStop, Pause, Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  createSimulation,
-  pauseSimulation,
-  startSimulation,
-  stopSimulation,
-} from "@/lib/api-client"
+import { simulationsService } from "@/services/simulations.service"
 
 type ControlBarProps = {
   sceneId?: string
@@ -19,6 +14,7 @@ type ControlBarProps = {
 
 export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBarProps) {
   const state = simulation?.state ?? "CREATED"
+
   async function run(action: () => Promise<Simulation>) {
     try {
       onChange(await action())
@@ -26,17 +22,19 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
       onError(reason instanceof Error ? reason.message : "Simulation command failed")
     }
   }
+
   async function play() {
     if (!simulation && sceneId) {
       return run(async () => {
-        const created = await createSimulation(sceneId)
-        return startSimulation(created.simulation_id)
+        const created = await simulationsService.create(sceneId)
+        return simulationsService.start(created.simulation_id)
       })
     }
     if (simulation) {
-      return run(() => startSimulation(simulation.simulation_id))
+      return run(() => simulationsService.start(simulation.simulation_id))
     }
   }
+
   return (
     <motion.div
       layout
@@ -62,7 +60,9 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
           variant="outline"
           aria-label="Pause simulation"
           disabled={state !== "RUNNING"}
-          onClick={() => simulation && void run(() => pauseSimulation(simulation.simulation_id))}
+          onClick={() =>
+            simulation && void run(() => simulationsService.pause(simulation.simulation_id))
+          }
         >
           <Pause />
         </Button>
@@ -71,7 +71,9 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
           variant="destructive"
           aria-label="Stop simulation"
           disabled={state !== "RUNNING" && state !== "PAUSED"}
-          onClick={() => simulation && void run(() => stopSimulation(simulation.simulation_id))}
+          onClick={() =>
+            simulation && void run(() => simulationsService.stop(simulation.simulation_id))
+          }
         >
           <CircleStop />
         </Button>

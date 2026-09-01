@@ -1,10 +1,9 @@
-import type { Project, ProjectScene } from "@ca/shared-types"
 import { ArrowLeft, Clapperboard, ExternalLink, FileVideoCamera } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
-import { getProject, getProjectScenes } from "@/lib/api-client"
+import { type Project, type ProjectScene, projectsService } from "@/services/projects.service"
 
 export default function ProjectDetail() {
   const { projectId } = useParams()
@@ -16,7 +15,7 @@ export default function ProjectDetail() {
     if (!projectId) {
       return
     }
-    void Promise.all([getProject(projectId), getProjectScenes(projectId)])
+    void Promise.all([projectsService.get(projectId), projectsService.listScenes(projectId)])
       .then(([nextProject, nextScenes]) => {
         setProject(nextProject)
         setScenes(nextScenes)

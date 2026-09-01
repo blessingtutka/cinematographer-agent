@@ -1,7 +1,7 @@
 import type { SimulationEvent } from "@ca/shared-types"
 import { useEffect, useState } from "react"
 
-import { simulationWebSocketUrl } from "@/lib/api-client"
+import { simulationsService } from "@/services/simulations.service"
 
 export function useSimulationWS(simulationId: string | undefined, enabled = true) {
   const [events, setEvents] = useState<SimulationEvent[]>([])
@@ -13,7 +13,7 @@ export function useSimulationWS(simulationId: string | undefined, enabled = true
       return
     }
 
-    const websocket = new WebSocket(simulationWebSocketUrl(simulationId))
+    const websocket = new WebSocket(simulationsService.webSocketUrl(simulationId))
     websocket.onmessage = (message) => {
       try {
         const event = JSON.parse(message.data) as SimulationEvent

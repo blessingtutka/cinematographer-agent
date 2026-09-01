@@ -1,4 +1,3 @@
-import type { Project } from "@ca/shared-types"
 import { ArrowRight, FolderKanban, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
@@ -6,7 +5,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { createProject, getProjects } from "@/lib/api-client"
+import { type Project, projectsService } from "@/services/projects.service"
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -16,7 +15,8 @@ export default function Projects() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    void getProjects()
+    void projectsService
+      .list()
       .then(setProjects)
       .catch((reason: unknown) =>
         setError(reason instanceof Error ? reason.message : "Could not load projects."),
@@ -29,7 +29,7 @@ export default function Projects() {
       return
     }
     try {
-      const project = await createProject(title.trim(), description.trim())
+      const project = await projectsService.create(title.trim(), description.trim())
       setProjects((current) => [project, ...current])
       setTitle("")
       setDescription("")

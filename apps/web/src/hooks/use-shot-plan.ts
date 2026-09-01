@@ -1,7 +1,7 @@
 import type { ShotPlan } from "@ca/shared-types"
 import { useEffect, useState } from "react"
 
-import { getShotPlan } from "@/lib/api-client"
+import { scenesService } from "@/services/scenes.service"
 
 const planCache = new Map<string, ShotPlan>()
 
@@ -13,34 +13,25 @@ export function useShotPlan(sceneId: string | undefined) {
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (!sceneId) {
-      return
-    }
+    if (!sceneId) {return}
 
     const cached = planCache.get(sceneId)
-    if (cached) {
-      return
-    }
+    if (cached) {return}
 
     let active = true
-    void getShotPlan(sceneId)
+    void scenesService
+      .createShotPlan(sceneId)
       .then((plan) => {
-        if (!active) {
-          return
-        }
+        if (!active) {return}
         planCache.set(sceneId, plan)
         setShotPlan(plan)
       })
       .catch((reason: unknown) => {
-        if (!active) {
-          return
-        }
+        if (!active) {return}
         setError(reason instanceof Error ? reason : new Error("Failed to load shot plan"))
       })
       .finally(() => {
-        if (active) {
-          setLoading(false)
-        }
+        if (active) {setLoading(false)}
       })
 
     return () => {

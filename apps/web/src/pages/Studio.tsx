@@ -9,13 +9,15 @@ import { SceneAnalysisPanel } from "@/components/scene-analysis/SceneAnalysisPan
 import { SceneInputPanel } from "@/components/scene-input/SceneInputPanel"
 import { ShotPlanPanel } from "@/components/shot-plan/ShotPlanPanel"
 import { useSimulationWS } from "@/hooks/use-simulation-ws"
-import { analyzeScene, getDrones, getShotPlan } from "@/lib/api-client"
 import { useUser } from "@/providers/user.provider"
+import { dronesService } from "@/services/drones.service"
+import { scenesService } from "@/services/scenes.service"
 
 function Studio() {
   const { user } = useUser()
   const [searchParams] = useSearchParams()
   const projectId = searchParams.get("project") ?? undefined
+
   const [analysis, setAnalysis] = useState<SceneAnalysis | null>(null)
   const [shotPlan, setShotPlan] = useState<ShotPlan | null>(null)
   const [loading, setLoading] = useState(false)
@@ -29,10 +31,10 @@ function Studio() {
     setError(null)
     setShotPlan(null)
     try {
-      const nextAnalysis = await analyzeScene(rawText, undefined, projectId)
+      const nextAnalysis = await scenesService.analyze(rawText, undefined, projectId)
       setAnalysis(nextAnalysis)
-      setDrones(await getDrones())
-      setShotPlan(await getShotPlan(nextAnalysis.scene_id))
+      setDrones(await dronesService.list())
+      setShotPlan(await scenesService.createShotPlan(nextAnalysis.scene_id))
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "The scene could not be analyzed.")
     } finally {
