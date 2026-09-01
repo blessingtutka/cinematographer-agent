@@ -1,6 +1,7 @@
 "use client"
 
 import { EllipsisVertical, LogOut, Settings, UserCircle } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -33,7 +34,7 @@ export function NavUser({ user, onSignOut }: { user: User; onSignOut: () => void
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user?.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-primary! text-white!">
                   {user.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
@@ -72,14 +73,18 @@ export function NavUser({ user, onSignOut }: { user: User; onSignOut: () => void
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <UserCircle />
-                Profile
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <UserCircle />
+                  Profile
+                </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem>
-                <Settings />
-                Settings
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <Settings />
+                  Settings
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 

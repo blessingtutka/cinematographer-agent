@@ -112,9 +112,15 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings">
-                  <Settings2 />
-                  <span>Settings</span>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/settings"}
+                  tooltip="Settings"
+                >
+                  <Link to="/settings">
+                    <Settings2 />
+                    <span>Settings</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
