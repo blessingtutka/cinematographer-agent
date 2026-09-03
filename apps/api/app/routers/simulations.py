@@ -12,7 +12,7 @@ from app.models.shot_plan import ShotPlanModel
 from app.models.simulation import SimulationModel
 from app.simulation.engine import SimulationEngine
 from app.simulation.websocket import WebSocketManager
-from cinematography_schema.schema import ShotPlan, SimulationState
+from cinematography_schema.schema import SceneAnalysis, ShotPlan, SimulationState
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
@@ -61,12 +61,26 @@ async def create_simulation(request: CreateSimulationRequest, http_request: Requ
         shot_plan = ShotPlan.model_validate(plan_row.plan_json)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Stored ShotPlan could not be read: {exc}") from exc
+
+    # Load scene analysis so the Vision_Agent has scene context during the sim
+    scene_analysis: SceneAnalysis | None = None
+    try:
+        scene_analysis = SceneAnalysis.model_validate(scene.analysis_json)
+    except Exception:
+        pass  # Vision degrades gracefully if analysis is missing
+
     simulation_id = str(uuid4())
     row = SimulationModel(simulation_id=simulation_id, scene_id=request.scene_id, state=SimulationState.CREATED.value)
     db.add(row)
     await db.flush()
     engines, websocket_manager = _runtime(http_request)
-    engines[simulation_id] = SimulationEngine(simulation_id, shot_plan, http_request.app.state.drone_manager, websocket_manager)
+    engines[simulation_id] = SimulationEngine(
+        simulation_id,
+        shot_plan,
+        http_request.app.state.drone_manager,
+        websocket_manager,
+        scene_analysis=scene_analysis,
+    )
     return _response(row)
 
 

@@ -8,9 +8,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import get_current_user
 from app.db.base import get_db
 from app.models.project import ProjectModel
 from app.models.scene import SceneModel
+from app.models.user import UserModel
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -39,35 +41,70 @@ def _project_response(project: ProjectModel) -> dict:
     }
 
 
-async def _get_project(project_id: str, db: AsyncSession) -> ProjectModel:
-    project = (await db.execute(select(ProjectModel).where(ProjectModel.project_id == project_id))).scalar_one_or_none()
+async def _get_project_for_user(
+    project_id: str, user: UserModel, db: AsyncSession
+) -> ProjectModel:
+    """Fetch a project that belongs to the authenticated user; 404 otherwise."""
+    project = (
+        await db.execute(
+            select(ProjectModel).where(
+                ProjectModel.project_id == project_id,
+                ProjectModel.owner_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
     if project is None:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
     return project
 
 
 @router.post("", status_code=201)
-async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_db)) -> dict:
-    project = ProjectModel(project_id=str(uuid4()), title=payload.title, description=payload.description)
+async def create_project(
+    payload: ProjectCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
+    project = ProjectModel(
+        project_id=str(uuid4()),
+        owner_id=current_user.id,
+        title=payload.title,
+        description=payload.description,
+    )
     db.add(project)
     await db.flush()
     return _project_response(project)
 
 
 @router.get("")
-async def list_projects(db: AsyncSession = Depends(get_db)) -> list[dict]:
-    result = await db.execute(select(ProjectModel).order_by(ProjectModel.updated_at.desc()))
+async def list_projects(
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> list[dict]:
+    result = await db.execute(
+        select(ProjectModel)
+        .where(ProjectModel.owner_id == current_user.id)
+        .order_by(ProjectModel.updated_at.desc())
+    )
     return [_project_response(project) for project in result.scalars().all()]
 
 
 @router.get("/{project_id}")
-async def get_project(project_id: str, db: AsyncSession = Depends(get_db)) -> dict:
-    return _project_response(await _get_project(project_id, db))
+async def get_project(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
+    return _project_response(await _get_project_for_user(project_id, current_user, db))
 
 
 @router.patch("/{project_id}")
-async def update_project(project_id: str, payload: ProjectUpdate, db: AsyncSession = Depends(get_db)) -> dict:
-    project = await _get_project(project_id, db)
+async def update_project(
+    project_id: str,
+    payload: ProjectUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
+    project = await _get_project_for_user(project_id, current_user, db)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(project, field, value)
     await db.flush()
@@ -75,16 +112,27 @@ async def update_project(project_id: str, payload: ProjectUpdate, db: AsyncSessi
 
 
 @router.delete("/{project_id}", status_code=204)
-async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)) -> None:
-    project = await _get_project(project_id, db)
+async def delete_project(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> None:
+    project = await _get_project_for_user(project_id, current_user, db)
     await db.delete(project)
 
 
 @router.get("/{project_id}/scenes")
-async def list_project_scenes(project_id: str, db: AsyncSession = Depends(get_db)) -> list[dict]:
-    await _get_project(project_id, db)
+async def list_project_scenes(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> list[dict]:
+    # Ownership check — raises 404 if the project doesn't belong to this user
+    await _get_project_for_user(project_id, current_user, db)
     result = await db.execute(
-        select(SceneModel).where(SceneModel.project_id == project_id).order_by(SceneModel.created_at.desc())
+        select(SceneModel)
+        .where(SceneModel.project_id == project_id)
+        .order_by(SceneModel.created_at.desc())
     )
     return [
         {

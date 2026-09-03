@@ -1,6 +1,6 @@
 """In-memory drone implementation used by the simulation."""
 
-from cinematography_schema.schema import CameraFeed, DroneStatus, Shot, Trajectory, Vector3
+from cinematography_schema.schema import CameraFeed, DroneStatus, Shot, Trajectory, Vector3, VisionAnalysis
 
 from .base import Drone
 
@@ -16,6 +16,10 @@ class VirtualDrone(Drone):
         self.is_recording = False
         self.trajectory: Trajectory | None = None
         self.trajectory_progress = 0.0
+        # Vision state — updated asynchronously by the SimulationEngine tick loop
+        self.latest_vision: VisionAnalysis | None = None
+        # Tick counter used by the engine to throttle vision calls per drone
+        self._vision_tick_counter: int = 0
 
     def receive_shot(self, shot: Shot) -> None:
         self.active_shot = shot
@@ -27,6 +31,10 @@ class VirtualDrone(Drone):
         self.trajectory_progress = 0.0
         self.current_position = trajectory.points[0].model_copy()
 
+    def set_vision(self, vision: VisionAnalysis) -> None:
+        """Store the latest vision analysis produced by the Vision_Agent."""
+        self.latest_vision = vision
+
     def get_status(self) -> DroneStatus:
         return DroneStatus(
             drone_id=self.drone_id,
@@ -35,6 +43,7 @@ class VirtualDrone(Drone):
             orientation=dict(self.current_orientation),
             is_recording=self.is_recording,
             active_shot=self.active_shot,
+            vision=self.latest_vision,
         )
 
     def get_camera_feed(self) -> CameraFeed:
@@ -53,6 +62,8 @@ class VirtualDrone(Drone):
         self.trajectory_progress = 0.0
         self.active_shot = None
         self.is_recording = False
+        self.latest_vision = None
+        self._vision_tick_counter = 0
 
     def advance(self, elapsed_seconds: float) -> bool:
         """Advance the active trajectory and report whether the shot finished."""
