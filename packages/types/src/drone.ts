@@ -3,6 +3,7 @@
  */
 
 import type { Shot } from "./shot-plan.js"
+import type { VisionAnalysis } from "./vision.js"
 
 export interface Vector3 {
   x: number
@@ -26,6 +27,8 @@ export interface DroneStatus {
   is_recording: boolean
   /** Present while a shot is actively being executed; absent otherwise */
   active_shot?: Shot
+  /** Latest vision analysis; present only while the simulation is running */
+  vision?: VisionAnalysis
 }
 
 /**
