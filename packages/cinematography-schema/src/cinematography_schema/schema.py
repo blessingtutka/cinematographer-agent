@@ -172,6 +172,48 @@ class ShotPlan(BaseModel):
     cinematographer_notes: str
 
 
+class VisionDetectedObject(BaseModel):
+    """A single entity the drone's AI vision identified in its current frame."""
+
+    label: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    position_hint: Optional[str] = None
+
+
+class DroneCommandAdjustment(BaseModel):
+    """A real-time flight/camera adjustment the Vision_Agent recommends."""
+
+    adjustment_type: str
+    """One of: REFRAME, TRACK_SUBJECT, ADJUST_ALTITUDE, CHANGE_MOVEMENT,
+    HOLD_POSITION, ZOOM_IN, ZOOM_OUT, or ABORT_SHOT."""
+
+    rationale: str = Field(max_length=300)
+    urgency: int = Field(ge=1, le=5, default=3)
+
+
+class VisionAnalysis(BaseModel):
+    """
+    Real-time visual analysis of a single drone's camera feed, produced by
+    the Vision_Agent every simulation tick.  Drives autonomous in-flight
+    adjustments so drones react to what they actually see rather than
+    following a static shot list blindly.
+    """
+
+    drone_id: str
+    drone_name: str
+    timestamp: str
+    
+    scene_description: str = Field(max_length=500)
+
+    detected_objects: list[VisionDetectedObject] = Field(default_factory=list)
+
+    composition_score: int = Field(ge=1, le=10)
+
+    recommended_adjustment: Optional[DroneCommandAdjustment] = None
+
+    active_shot_id: Optional[str] = None
+
+
 class DroneStatus(BaseModel):
     """Real-time status snapshot of a virtual drone."""
 
@@ -181,6 +223,7 @@ class DroneStatus(BaseModel):
     orientation: dict  # quaternion {x, y, z, w}
     is_recording: bool
     active_shot: Optional[Shot] = None
+    vision: Optional[VisionAnalysis] = None
 
 
 class SimulationState(str, Enum):
