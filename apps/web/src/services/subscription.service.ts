@@ -74,7 +74,7 @@ export const subscriptionService = {
    */
   getTiers: async (): Promise<TierLimits> => {
     try {
-      const { data } = await api.get<TierLimits>("/api/subscription/tiers")
+      const { data } = await api.get<TierLimits>("/subscription/tiers")
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load subscription tiers"))
@@ -88,7 +88,7 @@ export const subscriptionService = {
    */
   getQuota: async (): Promise<ProjectQuota> => {
     try {
-      const { data } = await api.get<ProjectQuota>("/api/subscription/quota")
+      const { data } = await api.get<ProjectQuota>("/subscription/quota")
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load project quota"))
@@ -103,7 +103,7 @@ export const subscriptionService = {
    */
   changeTier: async (tier: SubscriptionTier): Promise<UserOut> => {
     try {
-      const { data } = await api.post<UserOut>("/api/subscription/upgrade", { tier })
+      const { data } = await api.post<UserOut>("/subscription/upgrade", { tier })
       toast.success(`Subscription updated to ${TIER_FEATURES[tier].label}`)
       return data
     } catch (error) {

@@ -23,7 +23,7 @@ export interface ProjectScene {
 export const projectsService = {
   list: async (): Promise<Project[]> => {
     try {
-      const { data } = await api.get<Project[]>("/api/projects")
+      const { data } = await api.get<Project[]>("/projects")
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load projects"))
@@ -33,7 +33,7 @@ export const projectsService = {
 
   get: async (projectId: string): Promise<Project> => {
     try {
-      const { data } = await api.get<Project>(`/api/projects/${encodeURIComponent(projectId)}`)
+      const { data } = await api.get<Project>(`/projects/${encodeURIComponent(projectId)}`)
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load project"))
@@ -43,7 +43,7 @@ export const projectsService = {
 
   create: async (title: string, description: string): Promise<Project> => {
     try {
-      const { data } = await api.post<Project>("/api/projects", { title, description })
+      const { data } = await api.post<Project>("/projects", { title, description })
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to create project"))
@@ -57,7 +57,7 @@ export const projectsService = {
   ): Promise<Project> => {
     try {
       const { data } = await api.patch<Project>(
-        `/api/projects/${encodeURIComponent(projectId)}`,
+        `/projects/${encodeURIComponent(projectId)}`,
         values,
       )
       return data
@@ -69,7 +69,7 @@ export const projectsService = {
 
   delete: async (projectId: string): Promise<void> => {
     try {
-      await api.delete(`/api/projects/${encodeURIComponent(projectId)}`)
+      await api.delete(`/projects/${encodeURIComponent(projectId)}`)
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to delete project"))
       throw error
@@ -79,7 +79,7 @@ export const projectsService = {
   listScenes: async (projectId: string): Promise<ProjectScene[]> => {
     try {
       const { data } = await api.get<ProjectScene[]>(
-        `/api/projects/${encodeURIComponent(projectId)}/scenes`,
+        `/projects/${encodeURIComponent(projectId)}/scenes`,
       )
       return data
     } catch (error) {

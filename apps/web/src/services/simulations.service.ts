@@ -5,12 +5,15 @@ import { getErrorMessage } from "@/lib/utils/error-handler"
 
 import api from "./axios.service"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
+// WebSocket URL uses the raw host (no /api prefix) since WS is mounted at /ws/
+const WS_BASE_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
+  : "http://localhost:8000"
 
 export const simulationsService = {
   create: async (sceneId: string): Promise<Simulation> => {
     try {
-      const { data } = await api.post<Simulation>("/api/simulations", { scene_id: sceneId })
+      const { data } = await api.post<Simulation>("/simulations", { scene_id: sceneId })
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to create simulation"))
@@ -21,7 +24,7 @@ export const simulationsService = {
   start: async (simulationId: string): Promise<Simulation> => {
     try {
       const { data } = await api.post<Simulation>(
-        `/api/simulations/${encodeURIComponent(simulationId)}/start`,
+        `/simulations/${encodeURIComponent(simulationId)}/start`,
       )
       return data
     } catch (error) {
@@ -33,7 +36,7 @@ export const simulationsService = {
   pause: async (simulationId: string): Promise<Simulation> => {
     try {
       const { data } = await api.post<Simulation>(
-        `/api/simulations/${encodeURIComponent(simulationId)}/pause`,
+        `/simulations/${encodeURIComponent(simulationId)}/pause`,
       )
       return data
     } catch (error) {
@@ -45,7 +48,7 @@ export const simulationsService = {
   stop: async (simulationId: string): Promise<Simulation> => {
     try {
       const { data } = await api.post<Simulation>(
-        `/api/simulations/${encodeURIComponent(simulationId)}/stop`,
+        `/simulations/${encodeURIComponent(simulationId)}/stop`,
       )
       return data
     } catch (error) {
@@ -55,7 +58,7 @@ export const simulationsService = {
   },
 
   webSocketUrl: (simulationId: string): string => {
-    const url = new URL(API_BASE_URL)
+    const url = new URL(WS_BASE_URL)
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
     url.pathname = `/ws/simulations/${encodeURIComponent(simulationId)}`
     return url.toString()

@@ -12,7 +12,7 @@ export const scenesService = {
     projectId?: string,
   ): Promise<SceneAnalysis> => {
     try {
-      const { data } = await api.post<SceneAnalysis>("/api/scenes/analyze", {
+      const { data } = await api.post<SceneAnalysis>("/scenes/analyze", {
         raw_text: rawText,
         style_reference: styleReference,
         project_id: projectId,
@@ -26,7 +26,7 @@ export const scenesService = {
 
   get: async (sceneId: string): Promise<SceneAnalysis> => {
     try {
-      const { data } = await api.get<SceneAnalysis>(`/api/scenes/${encodeURIComponent(sceneId)}`)
+      const { data } = await api.get<SceneAnalysis>(`/scenes/${encodeURIComponent(sceneId)}`)
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load scene"))
@@ -36,9 +36,7 @@ export const scenesService = {
 
   createShotPlan: async (sceneId: string): Promise<ShotPlan> => {
     try {
-      const { data } = await api.post<ShotPlan>(
-        `/api/scenes/${encodeURIComponent(sceneId)}/shot-plan`,
-      )
+      const { data } = await api.post<ShotPlan>(`/scenes/${encodeURIComponent(sceneId)}/shot-plan`)
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to generate shot plan"))
@@ -48,7 +46,7 @@ export const scenesService = {
 
   getShots: async (sceneId: string): Promise<Shot[]> => {
     try {
-      const { data } = await api.get<Shot[]>(`/api/scenes/${encodeURIComponent(sceneId)}/shots`)
+      const { data } = await api.get<Shot[]>(`/scenes/${encodeURIComponent(sceneId)}/shots`)
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to load shots"))
