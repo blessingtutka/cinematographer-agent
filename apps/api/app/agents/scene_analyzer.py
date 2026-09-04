@@ -50,6 +50,7 @@ Analyze the provided screenplay scene and extract structured information.
 Return a JSON object that strictly conforms to the SceneAnalysis schema:
 - scene_id: a unique UUID string
 - title: a concise descriptive title for the scene (3-8 words)
+- description: a concise 1-2 sentence summary of the scene
 - raw_text: the original scene text, unchanged
 - characters: all named characters with unique character_id (UUID), display_name, and
   initial_position as {x, y, z} floats (place characters at plausible stage positions)
@@ -77,6 +78,7 @@ def _build_response_schema() -> dict:
         "properties": {
             "scene_id": {"type": "string"},
             "title": {"type": "string"},
+            "description": {"type": "string"},
             "raw_text": {"type": "string"},
             "characters": {
                 "type": "array",
@@ -165,6 +167,7 @@ def _build_response_schema() -> dict:
         "required": [
             "scene_id",
             "title",
+            "description",
             "raw_text",
             "characters",
             "actions",

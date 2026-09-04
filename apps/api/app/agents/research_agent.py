@@ -15,9 +15,8 @@ ONE Parallel Search call shaped the way Parallel's docs specify:
       sentences - Parallel's own docs flag full-sentence queries as an
       anti-pattern that degrades ranking quality.
 
-Topics run concurrently via `asyncio.gather` so the UI can still show one
-ResearchSource per topic with its own reference count (Requirement 10.4),
-while each individual call to Parallel follows best practice internally.
+Topics run sequentially so the research pipeline has a predictable request
+order and avoids concurrent calls to the Parallel API.
 
 If `scene_analysis.style_reference` is set (e.g. "Denis Villeneuve", "give it
 a Fincher feel"), an additional topic researches that director's known
@@ -27,7 +26,6 @@ its shot choices to a requested visual style instead of a generic default.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 
@@ -247,7 +245,7 @@ async def research(scene_analysis: SceneAnalysis) -> ResearchContext:
     """Ground upcoming shot planning in real cinematography convention.
 
     Builds >= 2 topics from the scene's emotional tone and cinematic beats,
-    runs one Parallel Search call per topic concurrently, all bounded by a
+    runs one Parallel Search call per topic sequentially, all bounded by a
     10-second overall timeout, and returns citable excerpts the
     Cinematographer_Agent can reference when justifying shot choices.
     """
@@ -262,23 +260,22 @@ async def research(scene_analysis: SceneAnalysis) -> ResearchContext:
 
     start_time = time.monotonic()
 
+    results: list[ResearchSource | None] = []
     try:
         async with AsyncParallel(api_key=settings.parallel_api_key) as client:
-            results = await asyncio.wait_for(
-                asyncio.gather(
-                    *[_search_topic(client, objective, keywords) for objective, keywords in topics]
-                ),
-                timeout=_RESEARCH_TIMEOUT_SECONDS,
-            )
-    except asyncio.TimeoutError:
+            for objective, keywords in topics:
+                if time.monotonic() - start_time >= _RESEARCH_TIMEOUT_SECONDS:
+                    raise TimeoutError
+                results.append(await _search_topic(client, objective, keywords))
+    except TimeoutError:
         elapsed_ms = (time.monotonic() - start_time) * 1000
         logger.warning(
-            "Research_Agent: timed out after %.1f ms for scene_id=%s — proceeding without research",
+            "Research_Agent: timed out after %.1f ms for scene_id=%s — proceeding with collected research",
             elapsed_ms,
             scene_analysis.scene_id,
         )
         return ResearchContext(
-            research_sources=[],
+            research_sources=[source for source in results if source is not None],
             research_warning="Research data unavailable: timeout",
         )
 
