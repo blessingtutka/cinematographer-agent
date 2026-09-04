@@ -21,6 +21,7 @@ class SceneModel(Base):
     )
     
     title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
     style_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
     analysis_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
