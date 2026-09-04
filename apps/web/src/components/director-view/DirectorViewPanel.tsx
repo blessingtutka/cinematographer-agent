@@ -1,6 +1,9 @@
 import type { DroneStatus, SceneAnalysis, ShotPlan } from "@ca/shared-types"
-import { Line, OrbitControls, Text } from "@react-three/drei"
+import { Line, OrbitControls, Text, useGLTF } from "@react-three/drei"
 import { Canvas } from "@react-three/fiber"
+
+import characterAsset from "@/assets/3d/base-character/scene.gltf?url"
+import droneAsset from "@/assets/3d/drone/scene.gltf?url"
 
 type DirectorViewPanelProps = {
   drones: DroneStatus[]
@@ -28,7 +31,7 @@ export function DirectorViewPanel({
           {paused ? "FROZEN" : "LIVE PREVIEW"}
         </span>
       </div>
-      <div className="h-[27rem] bg-slate-950 ring-1 ring-inset ring-white/10">
+      <div className="h-108 bg-slate-950 ring-1 ring-inset ring-white/10">
         <Canvas camera={{ position: [8, 7, 10], fov: 42 }}>
           <color attach="background" args={["#080b12"]} />
           <ambientLight intensity={1.3} />
@@ -96,12 +99,10 @@ function CharacterModel({
   name: string
   position: { x: number; y: number; z: number }
 }) {
+  const { scene } = useGLTF(characterAsset)
   return (
-    <group position={[position.x, position.y + 0.6, position.z]}>
-      <mesh>
-        <capsuleGeometry args={[0.22, 0.8, 4, 8]} />
-        <meshStandardMaterial color="#f4b860" />
-      </mesh>
+    <group position={[position.x, position.y, position.z]} scale={0.8}>
+      <primitive object={scene.clone()} />
       <Text position={[0, 1.1, 0]} fontSize={0.22} color="#f8fafc" anchorX="center">
         {name}
       </Text>
@@ -118,17 +119,14 @@ function DroneModel({
   index: number
   paused: boolean
 }) {
+  const { scene } = useGLTF(droneAsset)
   const color = drone.is_recording ? "#fb7185" : "#67e8f9"
   return (
-    <group position={[drone.position.x, drone.position.y, drone.position.z]}>
-      <mesh>
-        <boxGeometry args={[0.65, 0.16, 0.65]} />
-        <meshStandardMaterial
-          color={paused ? "#64748b" : color}
-          emissive={color}
-          emissiveIntensity={0.25}
-        />
-      </mesh>
+    <group
+      position={[drone.position.x, drone.position.y, drone.position.z]}
+      scale={paused ? 0.62 : 0.7}
+    >
+      <primitive object={scene.clone()} />
       <mesh position={[0, -0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <coneGeometry args={[0.5, 1.3, 32, 1, true]} />
         <meshBasicMaterial color={color} transparent opacity={0.12} depthWrite={false} />

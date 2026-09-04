@@ -1,5 +1,5 @@
 import type { VisionUpdateEvent } from "@ca/shared-types"
-import { AlertTriangle, Bot, Eye, Layers, Maximize2, Scan, TrendingUp } from "lucide-react"
+import { AlertTriangle, Bot, Eye, Layers, Scan } from "lucide-react"
 import { useEffect, useRef } from "react"
 
 type VisionOverlayPanelProps = {
@@ -49,11 +49,7 @@ export function VisionOverlayPanel({ visionMap, activeDroneId }: VisionOverlayPa
 
       <div className="divide-y divide-border/50">
         {sorted.map(([droneId, event]) => (
-          <DroneVisionCard
-            key={droneId}
-            event={event}
-            isActive={droneId === activeDroneId}
-          />
+          <DroneVisionCard key={droneId} event={event} isActive={droneId === activeDroneId} />
         ))}
       </div>
     </section>
@@ -64,13 +60,7 @@ export function VisionOverlayPanel({ visionMap, activeDroneId }: VisionOverlayPa
 // Per-drone vision card
 // ---------------------------------------------------------------------------
 
-function DroneVisionCard({
-  event,
-  isActive,
-}: {
-  event: VisionUpdateEvent
-  isActive: boolean
-}) {
+function DroneVisionCard({ event, isActive }: { event: VisionUpdateEvent; isActive: boolean }) {
   const cardRef = useRef<HTMLDivElement>(null)
 
   // Scroll active drone into view when it changes
@@ -103,9 +93,7 @@ function DroneVisionCard({
       </div>
 
       {/* Scene description — the "what the drone sees" sentence */}
-      <p className="mt-3 text-sm leading-6 text-foreground/90">
-        {event.scene_description}
-      </p>
+      <p className="mt-3 text-sm leading-6 text-foreground/90">{event.scene_description}</p>
 
       {/* Detected objects */}
       {event.detected_objects.length > 0 && (
@@ -116,7 +104,12 @@ function DroneVisionCard({
           </div>
           <ul className="mt-2 flex flex-wrap gap-2">
             {event.detected_objects.map((obj, i) => (
-              <DetectedObjectChip key={i} label={obj.label} confidence={obj.confidence} hint={obj.position_hint} />
+              <DetectedObjectChip
+                key={i}
+                label={obj.label}
+                confidence={obj.confidence}
+                hint={obj.position_hint}
+              />
             ))}
           </ul>
         </div>
@@ -184,7 +177,11 @@ function DetectedObjectChip({
 
   return (
     <li
-      title={hint ? `${hint} · ${(confidence * 100).toFixed(0)}% confidence` : `${(confidence * 100).toFixed(0)}% confidence`}
+      title={
+        hint
+          ? `${hint} · ${(confidence * 100).toFixed(0)}% confidence`
+          : `${(confidence * 100).toFixed(0)}% confidence`
+      }
       className={`flex items-center gap-1 border px-2 py-1 text-xs ${typeColor}`}
     >
       <span className="font-semibold">{name}</span>
@@ -207,9 +204,7 @@ function AdjustmentBanner({
   return (
     <div
       className={`mt-4 border-l-2 p-3 text-xs ${
-        isUrgent
-          ? "border-destructive bg-destructive/10"
-          : "border-secondary bg-secondary/10"
+        isUrgent ? "border-destructive bg-destructive/10" : "border-secondary bg-secondary/10"
       }`}
     >
       <div className="flex items-center gap-1.5 font-semibold uppercase tracking-widest">
