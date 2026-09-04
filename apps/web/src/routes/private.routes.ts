@@ -6,13 +6,27 @@ import type { AppLayoutProps } from "@/components/Layout/AppLayout"
 import AccountSettings from "@/pages/AccountSettings"
 import ProjectDetail from "@/pages/ProjectDetail"
 import Projects from "@/pages/Projects"
-import Studio from "@/pages/Studio"
+import {
+  StudioAnalysis,
+  StudioCoverage,
+  StudioInput,
+  StudioSimulation,
+} from "@/pages/studio/StudioStages"
+import { StudioWorkspace } from "@/pages/studio/StudioWorkspace"
 import { useUser } from "@/providers/user.provider"
 
 function PrivateRoute() {
-  const { isAuthenticated } = useUser()
+  const { isAuthenticated, isLoading } = useUser()
   const location = useLocation()
   const matches = useMatches()
+
+  if (isLoading) {
+    return createElement(
+      "div",
+      { className: "flex min-h-screen items-center justify-center" },
+      "Checking authentication…",
+    )
+  }
 
   if (!isAuthenticated) {
     return createElement(Navigate, {
@@ -50,7 +64,14 @@ export const privateRoutes: RouteObject[] = [
       },
       {
         path: "/studio",
-        element: createElement(Studio),
+        element: createElement(StudioWorkspace),
+        children: [
+          { index: true, element: createElement(Navigate, { to: "input", replace: true }) },
+          { path: "input", element: createElement(StudioInput) },
+          { path: "analysis", element: createElement(StudioAnalysis) },
+          { path: "coverage", element: createElement(StudioCoverage) },
+          { path: "simulation", element: createElement(StudioSimulation) },
+        ],
       },
       {
         path: "/settings",

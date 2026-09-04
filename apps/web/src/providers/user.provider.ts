@@ -19,7 +19,7 @@ export type User = {
   is_verified: boolean
   is_2fa_enabled: boolean
   subscription_tier: "free" | "basic" | "pro" | "enterprise"
-  /** Convenience alias kept for components that read `user.name` */
+  /** alias */
   name: string
   avatar: string | null
 }
@@ -54,7 +54,7 @@ function mapUser(raw: Awaited<ReturnType<typeof authService.getMe>>): User {
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(() => !tokenStorage.getAccessToken())
+  const [isLoading, setIsLoading] = useState(() => Boolean(tokenStorage.getAccessToken()))
 
   // On mount, restore session from stored tokens
   useEffect(() => {
@@ -66,9 +66,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       .getMe()
       .then((raw) => setUser(mapUser(raw)))
       .catch(() => {
-        // Token may be expired/invalid; interceptor will attempt refresh.
-        // If it still fails, clear state.
         tokenStorage.clear()
+        setUser(null)
       })
       .finally(() => setIsLoading(false))
   }, [])
@@ -86,7 +85,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     async (email: string, password: string, fullName?: string): Promise<void> => {
       await authService.register(email, password, fullName)
-      // After registration users still need to log in; keep them on /auth.
     },
     [],
   )

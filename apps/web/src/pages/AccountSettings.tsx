@@ -3,6 +3,7 @@ import {
   ChevronRight,
   KeyRound,
   Loader2,
+  type LucideIcon,
   QrCode,
   RefreshCw,
   ShieldCheck,
@@ -37,7 +38,7 @@ import {
   type TierLimits,
 } from "@/services/subscription.service"
 
-// ─── Tier styling ────────────────────────────────────────────────────────────
+//  Tier styling
 
 const TIER_ACCENT: Record<SubscriptionTier, string> = {
   free: "text-muted-foreground border-border",
@@ -53,15 +54,14 @@ const TIER_BADGE_BG: Record<SubscriptionTier, string> = {
   enterprise: "bg-yellow-500/10 text-yellow-400",
 }
 
-// ─── Section wrapper ─────────────────────────────────────────────────────────
-
+// Section wrapper
 function Section({
   icon: Icon,
   title,
   description,
   children,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   title: string
   description: string
   children: React.ReactNode
@@ -80,8 +80,7 @@ function Section({
   )
 }
 
-// ─── Quota bar ───────────────────────────────────────────────────────────────
-
+// Quota bar
 function QuotaBar({ quota }: { quota: ProjectQuota }) {
   const { current_count, limit } = quota
   const pct = limit === null ? 0 : Math.min(100, Math.round((current_count / limit) * 100))
@@ -92,7 +91,7 @@ function QuotaBar({ quota }: { quota: ProjectQuota }) {
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Projects used</span>
         <span className={nearLimit ? "text-yellow-400 font-medium" : "text-foreground"}>
-          {current_count} / {limit === null ? "∞" : limit}
+          {current_count} / {limit ?? "∞"}
         </span>
       </div>
       {limit !== null && (
@@ -110,8 +109,7 @@ function QuotaBar({ quota }: { quota: ProjectQuota }) {
   )
 }
 
-// ─── Backup codes display ────────────────────────────────────────────────────
-
+// Backup codes display
 function BackupCodesDisplay({ codes, onClose }: { codes: string[]; onClose: () => void }) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -140,8 +138,7 @@ function BackupCodesDisplay({ codes, onClose }: { codes: string[]; onClose: () =
   )
 }
 
-// ─── 2FA Setup dialog ────────────────────────────────────────────────────────
-
+// 2FA Setup dialog
 function TwoFactorSetupDialog({
   onSuccess,
   onClose,
@@ -244,8 +241,7 @@ function TwoFactorSetupDialog({
   )
 }
 
-// ─── Disable 2FA dialog ──────────────────────────────────────────────────────
-
+// Disable 2FA dialog
 function DisableTwoFactorDialog({
   onSuccess,
   onClose,
@@ -319,8 +315,7 @@ function DisableTwoFactorDialog({
   )
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
-
+// Main page
 export default function AccountSettings() {
   const { user, refreshUser } = useUser()
 
@@ -443,7 +438,7 @@ export default function AccountSettings() {
           </dl>
         </Section>
 
-        {/* ── Security / 2FA ────────────────────────────────────────────── */}
+        {/*  Security / 2FA */}
         <Section
           icon={ShieldCheck}
           title="Security"
@@ -492,7 +487,7 @@ export default function AccountSettings() {
           </div>
         </Section>
 
-        {/* ── Subscription ──────────────────────────────────────────────── */}
+        {/*  Subscription  */}
         <Section
           icon={Sparkles}
           title="Subscription"

@@ -1,4 +1,4 @@
-import { KeyRound, LockKeyhole, ShieldCheck } from "lucide-react"
+import { KeyRound, LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react"
 import { type SubmitEvent, useState } from "react"
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -12,7 +12,7 @@ import { useUser } from "@/providers/user.provider"
 type AuthMode = "login" | "register"
 
 function Auth() {
-  const { isAuthenticated, signIn, register, verifyTwoFactor } = useUser()
+  const { isAuthenticated, isLoading, signIn, register, verifyTwoFactor } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -26,7 +26,7 @@ function Auth() {
   const [preTwoFactorToken, setPreTwoFactorToken] = useState("")
   const [code, setCode] = useState("")
 
-  // Password reset dialog (frontend-only placeholder — no reset endpoint yet)
+  // Password reset dialog placeholder
   const [resetOpen, setResetOpen] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
 
@@ -39,6 +39,15 @@ function Auth() {
     return <Navigate to={destination} replace />
   }
 
+  if (isLoading) {
+    return (
+      <main className="flex h-dvh items-center justify-center bg-background text-muted-foreground">
+        <LoaderCircle className="mr-2 size-4 animate-spin" />
+        Checking authentication…
+      </main>
+    )
+  }
+
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
     setIsSubmitting(true)
@@ -49,7 +58,6 @@ function Auth() {
         toast.success("Account created", {
           description: "Sign in to access your workspace.",
         })
-        // Switch to login so the user can sign in immediately
         setMode("login")
         setPassword("")
         return
