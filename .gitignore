@@ -372,3 +372,13 @@ vite.config.ts.timestamp-*
 
 # Not ignore
 !apps/web/src/lib
+
+# Compressed files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
