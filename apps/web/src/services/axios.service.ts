@@ -49,7 +49,7 @@ api.interceptors.response.use(
     // Don't try to "refresh" a failed refresh call itself
     if (originalRequest.url?.includes("/auth/refresh")) {
       tokenStorage.clear()
-      window.location.href = "/login"
+      window.location.href = "/auth"
       throw error
     }
 
@@ -72,7 +72,7 @@ api.interceptors.response.use(
     const refreshToken = tokenStorage.getRefreshToken()
     if (!refreshToken) {
       tokenStorage.clear()
-      window.location.href = "/login"
+      window.location.href = "/auth"
       throw error
     }
 
@@ -88,8 +88,8 @@ api.interceptors.response.use(
     } catch (refreshError) {
       flushQueue(refreshError, null)
       tokenStorage.clear()
-      window.location.href = "/login"
-      return refreshError
+      window.location.href = "/auth"
+      throw refreshError
     } finally {
       isRefreshing = false
     }

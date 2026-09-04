@@ -97,7 +97,7 @@ export const authService = {
       toast.error(getErrorMessage(error, "Logout request failed"))
     } finally {
       tokenStorage.clear()
-      window.location.href = "/login"
+      window.location.href = "/auth"
     }
   },
 

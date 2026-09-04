@@ -34,6 +34,17 @@ export const scenesService = {
     }
   },
 
+  update: async (
+    sceneId: string,
+    values: Pick<SceneAnalysis, "title" | "description" | "raw_text">,
+  ): Promise<SceneAnalysis> => {
+    const { data } = await api.patch<SceneAnalysis>(
+      `/scenes/${encodeURIComponent(sceneId)}`,
+      values,
+    )
+    return data
+  },
+
   createShotPlan: async (sceneId: string): Promise<ShotPlan> => {
     try {
       const { data } = await api.post<ShotPlan>(`/scenes/${encodeURIComponent(sceneId)}/shot-plan`)
@@ -42,6 +53,11 @@ export const scenesService = {
       toast.error(getErrorMessage(error, "Failed to generate shot plan"))
       throw error
     }
+  },
+
+  getShotPlan: async (sceneId: string): Promise<ShotPlan> => {
+    const { data } = await api.get<ShotPlan>(`/scenes/${encodeURIComponent(sceneId)}/shot-plan`)
+    return data
   },
 
   getShots: async (sceneId: string): Promise<Shot[]> => {

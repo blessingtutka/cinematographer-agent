@@ -1,11 +1,11 @@
 import type { Simulation } from "@ca/shared-types"
 import { toast } from "sonner"
 
+import { tokenStorage } from "@/lib/api/token-storage"
 import { getErrorMessage } from "@/lib/utils/error-handler"
 
 import api from "./axios.service"
 
-// WebSocket URL uses the raw host (no /api prefix) since WS is mounted at /ws/
 const WS_BASE_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/api$/, "")
   : "http://localhost:8000"
@@ -61,6 +61,10 @@ export const simulationsService = {
     const url = new URL(WS_BASE_URL)
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
     url.pathname = `/ws/simulations/${encodeURIComponent(simulationId)}`
+    const accessToken = tokenStorage.getAccessToken()
+    if (accessToken) {
+      url.searchParams.set("access_token", accessToken)
+    }
     return url.toString()
   },
 }
