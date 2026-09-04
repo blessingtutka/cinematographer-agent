@@ -13,7 +13,11 @@ from cinematography_schema.auth import (
     ProjectQuotaOut,
 )
 
-router = APIRouter(prefix="/subscription", tags=["subscription"])
+router = APIRouter(
+    prefix="/subscription",
+    tags=["subscription"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class TierChangeRequest(BaseModel):

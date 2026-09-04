@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.drone.manager import DroneManager
+from app.core.deps import get_current_user
 
-router = APIRouter(prefix="/drones", tags=["drones"])
+router = APIRouter(
+    prefix="/drones",
+    tags=["drones"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_drone_manager(request: Request) -> DroneManager:

@@ -14,7 +14,11 @@ from app.models.project import ProjectModel
 from app.models.scene import SceneModel
 from app.models.user import UserModel
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class ProjectCreate(BaseModel):
@@ -139,6 +143,8 @@ async def list_project_scenes(
             "scene_id": scene.scene_id,
             "project_id": scene.project_id,
             "title": scene.title,
+            "description": scene.description,
+            "raw_text": scene.raw_text,
             "created_at": _iso(scene.created_at),
             "updated_at": _iso(scene.updated_at),
         }

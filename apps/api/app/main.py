@@ -10,6 +10,7 @@ from app.drone.manager import DroneManager
 from app.drone.virtual_drone import VirtualDrone
 from app.simulation.websocket import WebSocketManager
 from app.config import get_settings
+from app.core.security import decode_token_of_type
 from app.routers import drones, health, projects, scenes, simulations, auth, two_factor, subscription
 from cinematography_schema.schema import Vector3
 
@@ -18,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Nothing to do on startup — migrations are run via Alembic.
-    # Yield control to the app.
     app.state.drone_manager = DroneManager()
     for drone_id, name in (("drone-001", "Alpha"), ("drone-002", "Bravo"), ("drone-003", "Charlie")):
         app.state.drone_manager.register(
@@ -28,7 +27,6 @@ async def lifespan(app: FastAPI):
     app.state.simulation_engines = {}
     app.state.websocket_manager = WebSocketManager()
     yield
-    # Graceful shutdown: dispose the connection pool.
     await get_engine().dispose()
 
 
@@ -67,6 +65,16 @@ app.include_router(health.router)
 
 @app.websocket("/ws/simulations/{simulation_id}")
 async def simulation_websocket(websocket: WebSocket, simulation_id: str) -> None:
+    access_token = websocket.query_params.get("access_token")
+    if not access_token:
+        await websocket.close(code=4401, reason="Authentication required")
+        return
+    try:
+        decode_token_of_type(access_token, "access")
+    except Exception:
+        await websocket.close(code=4401, reason="Invalid access token")
+        return
+
     engines = websocket.app.state.simulation_engines
     engine = engines.get(simulation_id)
     if engine is None:

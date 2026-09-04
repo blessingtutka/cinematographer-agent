@@ -20,6 +20,7 @@ from app.agents.cinematographer_agent import DroneInfo, plan as cinematographer_
 from app.agents.exceptions import GeminiError, InternalProcessingError, ShotPlanValidationError
 from app.agents.research_agent import research
 from app.agents.scene_analyzer import analyze_scene
+from app.core.deps import get_current_user
 from app.db.base import get_db
 from app.models.scene import SceneModel
 from app.models.shot_plan import ShotPlanModel
@@ -27,13 +28,23 @@ from cinematography_schema.schema import SceneAnalysis, Shot, ShotPlan
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/scenes", tags=["scenes"])
+router = APIRouter(
+    prefix="/scenes",
+    tags=["scenes"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class SceneAnalyzeRequest(BaseModel):
     raw_text: str = Field(min_length=10, max_length=10000)
     style_reference: str | None = None  # e.g. "Denis Villeneuve", "give it a Fincher feel"
     project_id: str | None = None
+
+
+class SceneUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=5000)
+    raw_text: str = Field(min_length=10, max_length=10000)
 
 
 # TEMPORARY drone inventory stub — DroneManager doesn't exist yet.
@@ -96,6 +107,7 @@ async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_d
             scene_id=scene_analysis.scene_id,
             project_id=request.project_id,
             title=scene_analysis.title,
+            description=scene_analysis.description,
             raw_text=scene_analysis.raw_text,
             analysis_json=scene_analysis.model_dump(mode="json"),
         )
@@ -113,6 +125,23 @@ async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_d
         ) from exc
 
     return scene_analysis
+
+
+@router.patch("/{scene_id}", response_model=SceneAnalysis)
+async def update_scene(
+    scene_id: str, payload: SceneUpdateRequest, db: AsyncSession = Depends(get_db)
+) -> SceneAnalysis:
+    """Update the editable scene brief while preserving its analysis."""
+    scene_row = await _fetch_scene_row_or_404(scene_id, db)
+    scene_row.title = payload.title
+    scene_row.description = payload.description
+    scene_row.raw_text = payload.raw_text
+    analysis = _parse_scene_analysis(scene_row).model_copy(
+        update={"title": payload.title, "description": payload.description, "raw_text": payload.raw_text}
+    )
+    scene_row.analysis_json = analysis.model_dump(mode="json")
+    await db.commit()
+    return analysis
 
 
 @router.get("/{scene_id}", response_model=SceneAnalysis)
@@ -175,6 +204,20 @@ async def create_shot_plan(scene_id: str, db: AsyncSession = Depends(get_db)) ->
         ) from exc
 
     return shot_plan
+
+
+@router.get("/{scene_id}/shot-plan", response_model=ShotPlan)
+async def get_shot_plan(scene_id: str, db: AsyncSession = Depends(get_db)) -> ShotPlan:
+    """Return the persisted shot plan for a scene."""
+    await _fetch_scene_row_or_404(scene_id, db)
+    result = await db.execute(select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id))
+    plan_row = result.scalar_one_or_none()
+    if plan_row is None:
+        raise HTTPException(status_code=404, detail=f"No ShotPlan exists for scene {scene_id}")
+    try:
+        return ShotPlan.model_validate(plan_row.plan_json)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Persisted ShotPlan for scene {scene_id} could not be read: {exc}") from exc
 
 
 @router.get("/{scene_id}/shots", response_model=list[Shot])

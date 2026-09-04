@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import get_db
+from app.core.deps import get_current_user
 from app.models.scene import SceneModel
 from app.models.shot_plan import ShotPlanModel
 from app.models.simulation import SimulationModel
@@ -14,7 +15,11 @@ from app.simulation.engine import SimulationEngine
 from app.simulation.websocket import WebSocketManager
 from cinematography_schema.schema import SceneAnalysis, ShotPlan, SimulationState
 
-router = APIRouter(prefix="/simulations", tags=["simulations"])
+router = APIRouter(
+    prefix="/simulations",
+    tags=["simulations"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class CreateSimulationRequest(BaseModel):
