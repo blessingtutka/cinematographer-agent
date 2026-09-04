@@ -3,13 +3,7 @@
  */
 
 export type EmotionalTone =
-  | 'NEUTRAL'
-  | 'TENSE'
-  | 'ROMANTIC'
-  | 'MELANCHOLIC'
-  | 'JOYFUL'
-  | 'FEARFUL'
-  | 'ANGRY'
+  "NEUTRAL" | "TENSE" | "ROMANTIC" | "MELANCHOLIC" | "JOYFUL" | "FEARFUL" | "ANGRY"
 
 export interface Character {
   character_id: string
@@ -43,6 +37,7 @@ export interface CinematicBeat {
 export interface DialogueLine {
   line_id: string
   /** References a Character.character_id in the same SceneAnalysis */
+  description: string
   character_id: string
   text: string
   /** Normalised position within the narrative, in [0, 1] */
@@ -52,6 +47,7 @@ export interface DialogueLine {
 export interface SceneAnalysis {
   scene_id: string
   title: string
+  description: string
   raw_text: string
   characters: Character[]
   actions: Action[]

@@ -113,6 +113,7 @@ class SceneAnalysis(BaseModel):
 
     scene_id: str
     title: str
+    description: str = ""
     raw_text: str
     characters: list[Character]
     actions: list[Action]
