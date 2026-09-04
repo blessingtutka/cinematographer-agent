@@ -81,7 +81,9 @@ export default function ProjectDetail() {
                     </div>
                   </div>
                   <Button asChild variant="outline" size="sm">
-                    <Link to={`/studio?project=${project.project_id}&scene=${scene.scene_id}`}>
+                    <Link
+                      to={`/studio/analysis?project=${project.project_id}&scene=${scene.scene_id}`}
+                    >
                       Open scene <ExternalLink />
                     </Link>
                   </Button>
