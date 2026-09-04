@@ -1,0 +1,8 @@
+Model Information:
+* title:	Sprunki Base
+* source:	https://sketchfab.com/3d-models/sprunki-base-4aa91f3d05884f41829b63630e53005c
+* author:	-MG- (https://sketchfab.com/MG_MakesModels)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
