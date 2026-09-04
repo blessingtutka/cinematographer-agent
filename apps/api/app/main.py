@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     app.state.drone_manager = DroneManager()
     for drone_id, name in (("drone-001", "Alpha"), ("drone-002", "Bravo"), ("drone-003", "Charlie")):
         app.state.drone_manager.register(
-            VirtualDrone(drone_id, name, Vector3(x=0, y=0, z=0))
+            VirtualDrone(drone_id, name, Vector3(x=0, y=1.8, z=0))
         )
     app.state.simulation_engines = {}
     app.state.websocket_manager = WebSocketManager()

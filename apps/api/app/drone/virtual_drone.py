@@ -1,6 +1,14 @@
 """In-memory drone implementation used by the simulation."""
 
-from cinematography_schema.schema import CameraFeed, DroneStatus, Shot, Trajectory, Vector3, VisionAnalysis
+from cinematography_schema.schema import (
+    CameraFeed,
+    CameraMovement,
+    DroneStatus,
+    Shot,
+    Trajectory,
+    Vector3,
+    VisionAnalysis,
+)
 
 from .base import Drone
 
@@ -25,6 +33,34 @@ class VirtualDrone(Drone):
         self.active_shot = shot
         self.is_recording = True
         self.trajectory_progress = 0.0
+        self.move_to(self._trajectory_for(shot))
+
+    def _trajectory_for(self, shot: Shot) -> Trajectory:
+        """Create a visible, deterministic path for the requested camera move."""
+        start = self.current_position.model_copy()
+        movement_offsets = {
+            CameraMovement.DOLLY_IN: (0.0, 0.15, -2.4),
+            CameraMovement.DOLLY_OUT: (0.0, 0.4, 2.4),
+            CameraMovement.MOVE_TO: (2.2, 0.7, -2.0),
+            CameraMovement.TRACK: (2.6, 0.25, -1.2),
+            CameraMovement.FOLLOW: (1.8, 0.8, -1.8),
+            CameraMovement.ORBIT: (2.2, 0.5, -2.2),
+            CameraMovement.PAN: (0.8, 0.15, -0.8),
+            CameraMovement.TILT: (-0.8, 0.4, -0.8),
+            CameraMovement.STATIC: (0.0, 0.0, 0.0),
+        }
+        dx, dy, dz = movement_offsets[shot.camera_movement]
+        end = Vector3(
+            x=start.x + dx,
+            y=max(1.2, start.y + dy),
+            z=start.z + dz,
+        )
+        midpoint = Vector3(
+            x=start.x + dx * 0.45,
+            y=max(1.2, start.y + max(dy * 0.45, 0.25)),
+            z=start.z + dz * 0.45,
+        )
+        return Trajectory(points=[start, midpoint, end], duration_seconds=shot.duration_seconds)
 
     def move_to(self, trajectory: Trajectory) -> None:
         self.trajectory = trajectory
@@ -74,9 +110,11 @@ class VirtualDrone(Drone):
             self.trajectory_progress + elapsed_seconds / self.active_shot.duration_seconds,
         )
         if self.trajectory and len(self.trajectory.points) > 1:
-            start = self.trajectory.points[0]
-            end = self.trajectory.points[-1]
-            progress = self.trajectory_progress
+            scaled = self.trajectory_progress * (len(self.trajectory.points) - 1)
+            segment = min(int(scaled), len(self.trajectory.points) - 2)
+            progress = scaled - segment
+            start = self.trajectory.points[segment]
+            end = self.trajectory.points[segment + 1]
             self.current_position = Vector3(
                 x=start.x + (end.x - start.x) * progress,
                 y=start.y + (end.y - start.y) * progress,

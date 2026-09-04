@@ -132,6 +132,11 @@ class SimulationEngine:
 
                 await asyncio.sleep(0.1)
 
+            if self.state == SimulationState.RUNNING:
+                self.state = SimulationState.COMPLETED
+                await self.websocket_manager.broadcast(self.simulation_id, self._state_event())
+                await self.websocket_manager.close(self.simulation_id)
+
         except asyncio.CancelledError:
             pass
 

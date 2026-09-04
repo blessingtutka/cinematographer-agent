@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     parallel_api_key: str = ""
 
     # Auth settings
-    jwt_secret_key: str = "insecure-dev-secret-change-me"
+    jwt_secret_key: str = "insecure-dev-secret-change-me-please"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7

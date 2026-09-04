@@ -92,6 +92,8 @@ async def create_simulation(request: CreateSimulationRequest, http_request: Requ
 @router.post("/{simulation_id}/start")
 async def start_simulation(simulation_id: str, request: Request, db: AsyncSession = Depends(get_db)) -> dict:
     row = await _get_simulation(simulation_id, db)
+    if row.state == SimulationState.RUNNING.value:
+        return _response(row)
     if not can_transition(SimulationState(row.state), SimulationState.RUNNING):
         raise HTTPException(status_code=409, detail=f"Simulation cannot start from {row.state} state")
     engines, websocket_manager = _runtime(request)
