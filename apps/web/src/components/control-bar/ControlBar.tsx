@@ -1,6 +1,7 @@
 import type { Simulation } from "@ca/shared-types"
 import { motion } from "framer-motion"
 import { CircleStop, Pause, Play } from "lucide-react"
+import { useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { simulationsService } from "@/services/simulations.service"
@@ -14,12 +15,22 @@ type ControlBarProps = {
 
 export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBarProps) {
   const state = simulation?.state ?? "CREATED"
+  const actionInFlight = useRef(false)
+  const [busy, setBusy] = useState(false)
 
   async function run(action: () => Promise<Simulation>) {
+    if (actionInFlight.current) {
+      return
+    }
+    actionInFlight.current = true
+    setBusy(true)
     try {
       onChange(await action())
     } catch (reason: unknown) {
       onError(reason instanceof Error ? reason.message : "Simulation command failed")
+    } finally {
+      actionInFlight.current = false
+      setBusy(false)
     }
   }
 
@@ -50,7 +61,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
         <Button
           size="icon"
           aria-label="Start or resume simulation"
-          disabled={!sceneId || state === "COMPLETED"}
+          disabled={busy || !sceneId || state === "COMPLETED"}
           onClick={() => void play()}
         >
           <Play />
@@ -59,7 +70,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
           size="icon"
           variant="outline"
           aria-label="Pause simulation"
-          disabled={state !== "RUNNING"}
+          disabled={busy || state !== "RUNNING"}
           onClick={() =>
             simulation && void run(() => simulationsService.pause(simulation.simulation_id))
           }
@@ -70,7 +81,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
           size="icon"
           variant="destructive"
           aria-label="Stop simulation"
-          disabled={state !== "RUNNING" && state !== "PAUSED"}
+          disabled={busy || (state !== "RUNNING" && state !== "PAUSED")}
           onClick={() =>
             simulation && void run(() => simulationsService.stop(simulation.simulation_id))
           }

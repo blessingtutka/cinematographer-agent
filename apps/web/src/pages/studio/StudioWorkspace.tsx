@@ -231,6 +231,24 @@ export function StudioWorkspace() {
     setVisionMap((prev) => new Map(prev).set(lastEvent.drone_id, lastEvent))
   }, [lastEvent])
 
+  useEffect(() => {
+    if (lastEvent?.type !== "drone_update") {
+      return
+    }
+    // Keep the scene authoritative to the latest server simulation snapshot.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDrones(lastEvent.drones)
+  }, [lastEvent])
+
+  useEffect(() => {
+    if (lastEvent?.type !== "state_change") {
+      return
+    }
+    // Mirror the server lifecycle so controls remain accurate after playback ends.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSimulation((current) => (current ? { ...current, state: lastEvent.new_state } : current))
+  }, [lastEvent])
+
   // -- Navigation helpers --
 
   function changeProject(nextProjectId: string) {
