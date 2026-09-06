@@ -2,7 +2,11 @@
 
 Implements:
     POST /scenes/analyze
+    GET  /scenes
     GET  /scenes/{scene_id}
+    PATCH /scenes/{scene_id}
+    DELETE /scenes/{scene_id}
+    POST /scenes/{scene_id}/reanalyze
     POST /scenes/{scene_id}/shot-plan
     GET  /scenes/{scene_id}/shots
 """
@@ -26,6 +30,7 @@ from app.models.scene import SceneModel
 from app.models.shot_plan import ShotPlanModel
 from app.models.drone import DroneModel
 from app.models.user import UserModel
+from app.models.project import ProjectModel
 from cinematography_schema.schema import SceneAnalysis, Shot, ShotPlan
 
 logger = logging.getLogger(__name__)
@@ -49,16 +54,49 @@ class SceneUpdateRequest(BaseModel):
     raw_text: str = Field(min_length=10, max_length=10000)
 
 
+class SceneReanalyzeRequest(BaseModel):
+    raw_text: str = Field(min_length=10, max_length=10000)
+    style_reference: str | None = None
+
+
 class ShotPlanRequest(BaseModel):
     drone_ids: list[str] = Field(default_factory=list, max_length=3)
 
 
-async def _fetch_scene_row_or_404(scene_id: str, db: AsyncSession) -> SceneModel:
+async def _fetch_scene_row_or_404(
+    scene_id: str, db: AsyncSession, user: UserModel | None = None
+) -> SceneModel:
     result = await db.execute(select(SceneModel).where(SceneModel.scene_id == scene_id))
     scene_row = result.scalar_one_or_none()
     if scene_row is None:
         raise HTTPException(status_code=404, detail=f"Scene {scene_id} not found")
+    if user is not None and scene_row.project_id is not None:
+        project = await db.get(ProjectModel, scene_row.project_id)
+        if project is None or project.owner_id != user.id:
+            raise HTTPException(status_code=404, detail=f"Scene {scene_id} not found")
     return scene_row
+
+
+def _store_analysis(scene_row: SceneModel, analysis: SceneAnalysis) -> None:
+    scene_row.title = analysis.title
+    scene_row.description = analysis.description
+    scene_row.raw_text = analysis.raw_text
+    scene_row.style_reference = analysis.style_reference
+    scene_row.analysis_json = analysis.model_dump(mode="json")
+
+
+@router.get("", response_model=list[SceneAnalysis])
+async def list_scenes(
+    db: AsyncSession = Depends(get_db), user: UserModel = Depends(get_current_user)
+) -> list[SceneAnalysis]:
+    """List all analyzed scenes belonging to the current user."""
+    result = await db.execute(
+        select(SceneModel)
+        .join(ProjectModel, SceneModel.project_id == ProjectModel.project_id)
+        .where(ProjectModel.owner_id == user.id)
+        .order_by(SceneModel.updated_at.desc())
+    )
+    return [_parse_scene_analysis(scene) for scene in result.scalars().all()]
 
 
 def _parse_scene_analysis(scene_row: SceneModel) -> SceneAnalysis:
@@ -126,10 +164,13 @@ async def analyze(request: SceneAnalyzeRequest, db: AsyncSession = Depends(get_d
 
 @router.patch("/{scene_id}", response_model=SceneAnalysis)
 async def update_scene(
-    scene_id: str, payload: SceneUpdateRequest, db: AsyncSession = Depends(get_db)
+    scene_id: str,
+    payload: SceneUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
 ) -> SceneAnalysis:
     """Update the editable scene brief while preserving its analysis."""
-    scene_row = await _fetch_scene_row_or_404(scene_id, db)
+    scene_row = await _fetch_scene_row_or_404(scene_id, db, user)
     scene_row.title = payload.title
     scene_row.description = payload.description
     scene_row.raw_text = payload.raw_text
@@ -141,11 +182,61 @@ async def update_scene(
     return analysis
 
 
+@router.delete("/{scene_id}", status_code=204)
+async def delete_scene(
+    scene_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
+) -> None:
+    """Delete a scene and its cascaded shot plan."""
+    scene_row = await _fetch_scene_row_or_404(scene_id, db, user)
+    await db.delete(scene_row)
+    await db.commit()
+
+
+@router.post("/{scene_id}/reanalyze", response_model=SceneAnalysis)
+async def reanalyze_scene(
+    scene_id: str,
+    payload: SceneReanalyzeRequest,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
+) -> SceneAnalysis:
+    """Run the complete Gemini scene-analysis process again in place."""
+    scene_row = await _fetch_scene_row_or_404(scene_id, db, user)
+    try:
+        analysis = await analyze_scene(payload.raw_text)
+    except GeminiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except InternalProcessingError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    analysis = analysis.model_copy(
+        update={
+            "scene_id": str(scene_row.scene_id),
+            "style_reference": payload.style_reference
+            if payload.style_reference is not None
+            else scene_row.style_reference,
+        }
+    )
+    _store_analysis(scene_row, analysis)
+    shot_plan = await db.scalar(
+        select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_row.scene_id)
+    )
+    if shot_plan is not None:
+        await db.delete(shot_plan)
+    await db.commit()
+    return analysis
+
+
 @router.get("/{scene_id}", response_model=SceneAnalysis)
-async def get_scene(scene_id: str, db: AsyncSession = Depends(get_db)) -> SceneAnalysis:
+async def get_scene(
+    scene_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
+) -> SceneAnalysis:
     """Fetch a previously analyzed scene. 404 if it doesn't exist."""
     try:
-        scene_row = await _fetch_scene_row_or_404(scene_id, db)
+        scene_row = await _fetch_scene_row_or_404(scene_id, db, user)
     except HTTPException:
         raise
     except Exception as exc:
@@ -165,7 +256,7 @@ async def create_shot_plan(
     scene and persist the resulting ShotPlan, overwriting any existing plan
     for this scene_id. 404 if the scene itself doesn't
     exist."""
-    scene_row = await _fetch_scene_row_or_404(scene_id, db)
+    scene_row = await _fetch_scene_row_or_404(scene_id, db, user)
     scene_analysis = _parse_scene_analysis(scene_row)
 
     research_context = await research(scene_analysis)
@@ -237,9 +328,13 @@ async def create_shot_plan(
 
 
 @router.get("/{scene_id}/shot-plan", response_model=ShotPlan)
-async def get_shot_plan(scene_id: str, db: AsyncSession = Depends(get_db)) -> ShotPlan:
+async def get_shot_plan(
+    scene_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
+) -> ShotPlan:
     """Return the persisted shot plan for a scene."""
-    await _fetch_scene_row_or_404(scene_id, db)
+    await _fetch_scene_row_or_404(scene_id, db, user)
     result = await db.execute(select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id))
     plan_row = result.scalar_one_or_none()
     if plan_row is None:
@@ -251,11 +346,16 @@ async def get_shot_plan(scene_id: str, db: AsyncSession = Depends(get_db)) -> Sh
 
 
 @router.get("/{scene_id}/shots", response_model=list[Shot])
-async def get_shots(scene_id: str, db: AsyncSession = Depends(get_db)) -> list[Shot]:
+async def get_shots(
+    scene_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user),
+) -> list[Shot]:
     """Return the ordered list of Shots for a scene's persisted ShotPlan.
     404 if no ShotPlan exists; 500 if the persisted plan can't be
     read."""
     try:
+        await _fetch_scene_row_or_404(scene_id, db, user)
         result = await db.execute(select(ShotPlanModel).where(ShotPlanModel.scene_id == scene_id))
         plan_row = result.scalar_one_or_none()
     except Exception as exc:

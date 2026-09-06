@@ -223,6 +223,7 @@ def _assemble_shot_plan(
         "shots": assembled_shots,
         "research_sources": research_context.research_sources,
         "research_warning": research_context.research_warning,
+        "research_confidence": research_context.research_confidence,
         "cinematographer_notes": raw_payload.get("cinematographer_notes", ""),
     }
 

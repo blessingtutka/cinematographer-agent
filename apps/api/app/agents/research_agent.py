@@ -43,11 +43,10 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_RESEARCH_TIMEOUT_SECONDS = 10.0
+_RESEARCH_TIMEOUT_SECONDS = 30.0
 
 # "fast" mode targets ~700ms p50 per Parallel's docs
 _SEARCH_MODE = "fast"
-_MAX_RESULTS_PER_TOPIC = 5
 
 
 class ResearchContext(BaseModel):
@@ -55,6 +54,7 @@ class ResearchContext(BaseModel):
 
     research_sources: list[ResearchSource] = Field(default_factory=list)
     research_warning: str | None = None
+    research_confidence: float = Field(ge=0.0, le=1.0, default=0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -212,12 +212,13 @@ async def _search_topic(
             objective=objective,
             search_queries=search_queries[:3],
             mode=_SEARCH_MODE,
-            max_results=_MAX_RESULTS_PER_TOPIC,
+            max_chars_total=6000,
         )
     except Exception as exc:  # noqa: BLE001 #  deliberately broad, see module docstring
-        logger.debug(
-            "Research_Agent: Parallel call failed, dropping topic — objective=%r error=%s",
+        logger.warning(
+            "Research_Agent: Parallel call failed, dropping topic — objective=%r error_type=%s error=%s",
             objective,
+            type(exc).__name__,
             exc,
         )
         return None
@@ -237,6 +238,27 @@ async def _search_topic(
 
     if not references:
         return None
+
+    # Search gives us candidate URLs; Extract grounds the final decision in
+    # the underlying page rather than a search snippet.
+    try:
+        extracted = await client.extract(
+            urls=[references[0].url],
+            objective=objective,
+            search_queries=search_queries[:3],
+            max_chars_total=4000,
+        )
+        extracted_by_url = {result.url: result for result in extracted.results}
+        extracted_result = extracted_by_url.get(references[0].url)
+        if extracted_result and extracted_result.excerpts:
+            references[0] = SourceReference(
+                title=extracted_result.title or references[0].title,
+                url=references[0].url,
+                excerpt=extracted_result.excerpts[0][:1500],
+                extracted=True,
+            )
+    except Exception as exc:  # noqa: BLE001 - evidence is an enhancement
+        logger.warning("Research_Agent: extract failed for %s — %s", references[0].url, exc)
 
     return ResearchSource(query=objective, references=references)
 
@@ -277,26 +299,39 @@ async def research(scene_analysis: SceneAnalysis) -> ResearchContext:
         return ResearchContext(
             research_sources=[source for source in results if source is not None],
             research_warning="Research data unavailable: timeout",
+            research_confidence=0.35,
         )
 
     elapsed_ms = (time.monotonic() - start_time) * 1000
     research_sources = [source for source in results if source is not None]
 
     if not research_sources:
-        # Every topic either failed or returned nothing usable - proceed on
-        # scene analysis alone, no warning.
-        logger.debug(
+        logger.warning(
             "Research_Agent: no usable results across %d topic(s) (%.1f ms) — proceeding without research",
             len(topics),
             elapsed_ms,
         )
-        return ResearchContext(research_sources=[])
+        return ResearchContext(
+            research_sources=[],
+            research_warning="Parallel returned no usable research. Check PARALLEL_API_KEY and API connectivity.",
+        )
 
-    logger.debug(
+    logger.info(
         "Research_Agent: completed in %.1f ms — sources=%d, total_references=%d",
         elapsed_ms,
         len(research_sources),
         sum(s.reference_count for s in research_sources),
     )
 
-    return ResearchContext(research_sources=research_sources)
+    reference_count = sum(s.reference_count for s in research_sources)
+    extracted_count = sum(
+        1
+        for source in research_sources
+        for reference in source.references
+        if reference.extracted
+    )
+    confidence = min(1.0, 0.35 + (0.1 * len(research_sources)) + (0.1 * extracted_count) + (0.03 * reference_count))
+    return ResearchContext(
+        research_sources=research_sources,
+        research_confidence=round(confidence, 2),
+    )
