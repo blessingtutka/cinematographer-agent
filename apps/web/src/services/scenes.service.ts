@@ -45,9 +45,12 @@ export const scenesService = {
     return data
   },
 
-  createShotPlan: async (sceneId: string): Promise<ShotPlan> => {
+  createShotPlan: async (sceneId: string, droneIds: string[] = []): Promise<ShotPlan> => {
     try {
-      const { data } = await api.post<ShotPlan>(`/scenes/${encodeURIComponent(sceneId)}/shot-plan`)
+      const { data } = await api.post<ShotPlan>(
+        `/scenes/${encodeURIComponent(sceneId)}/shot-plan`,
+        { drone_ids: droneIds },
+      )
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to generate shot plan"))

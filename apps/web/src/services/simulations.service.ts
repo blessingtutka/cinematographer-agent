@@ -11,9 +11,12 @@ const WS_BASE_URL = import.meta.env.VITE_API_URL
   : "http://localhost:8000"
 
 export const simulationsService = {
-  create: async (sceneId: string): Promise<Simulation> => {
+  create: async (sceneId: string, droneIds: string[] = []): Promise<Simulation> => {
     try {
-      const { data } = await api.post<Simulation>("/simulations", { scene_id: sceneId })
+      const { data } = await api.post<Simulation>("/simulations", {
+        scene_id: sceneId,
+        drone_ids: droneIds,
+      })
       return data
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to create simulation"))
