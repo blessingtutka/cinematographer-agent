@@ -25,9 +25,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Cinematographer Agent API", version="0.1.0", lifespan=lifespan)
+settings = get_settings()
+cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+if settings.frontend_url.strip() and settings.frontend_url.strip() not in cors_origins:
+    cors_origins.append(settings.frontend_url.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in get_settings().cors_origins.split(",") if origin.strip()],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

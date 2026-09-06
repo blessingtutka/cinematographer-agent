@@ -7,7 +7,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # App settings
-    cors_origins: str = "http://localhost:5173,http://localhost:4173"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:4173,"
+        "https://cinematographer-agent.netlify.app"
+    )
+    frontend_url: str = ""
     log_level: str = "INFO"
     environment: str = "development"
 
