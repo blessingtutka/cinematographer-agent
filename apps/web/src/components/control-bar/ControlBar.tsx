@@ -8,12 +8,21 @@ import { simulationsService } from "@/services/simulations.service"
 
 type ControlBarProps = {
   sceneId?: string
+  droneIds?: string[]
+  allDronesOnline?: boolean
   simulation: Simulation | null
   onChange: (simulation: Simulation) => void
   onError: (message: string) => void
 }
 
-export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBarProps) {
+export function ControlBar({
+  sceneId,
+  droneIds,
+  allDronesOnline,
+  simulation,
+  onChange,
+  onError,
+}: ControlBarProps) {
   const state = simulation?.state ?? "CREATED"
   const actionInFlight = useRef(false)
   const [busy, setBusy] = useState(false)
@@ -37,7 +46,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
   async function play() {
     if (!simulation && sceneId) {
       return run(async () => {
-        const created = await simulationsService.create(sceneId)
+        const created = await simulationsService.create(sceneId, droneIds)
         return simulationsService.start(created.simulation_id)
       })
     }
@@ -61,7 +70,7 @@ export function ControlBar({ sceneId, simulation, onChange, onError }: ControlBa
         <Button
           size="icon"
           aria-label="Start or resume simulation"
-          disabled={busy || !sceneId || state === "COMPLETED"}
+          disabled={busy || !sceneId || !allDronesOnline || state === "COMPLETED"}
           onClick={() => void play()}
         >
           <Play />

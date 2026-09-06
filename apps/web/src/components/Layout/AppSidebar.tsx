@@ -1,5 +1,6 @@
 import {
   Activity,
+  Bluetooth,
   Camera,
   Clapperboard,
   FolderKanban,
@@ -34,7 +35,8 @@ type AppSidebarProps = {
 const workspaceLinks = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
   { label: "Control room", href: "/studio", icon: LayoutDashboard },
-  { label: "Scene input", href: "/studio#scene-input", icon: Clapperboard },
+  { label: "Drones", href: "/drones", icon: Bluetooth },
+  { label: "Scene input", href: "/studio/input", icon: Clapperboard },
   { label: "Shot plan", href: "/studio#shot-plan", icon: Camera },
 ]
 

@@ -1,13 +1,18 @@
 import type { DroneStatus } from "@ca/shared-types"
 import { OrbitControls, PerspectiveCamera, Text } from "@react-three/drei"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 
-type CameraFeedsPanelProps = { drones: DroneStatus[] }
+type CameraFeedsPanelProps = { drones: DroneStatus[]; selectedDroneId?: string }
 
-export function CameraFeedsPanel({ drones }: CameraFeedsPanelProps) {
+export function CameraFeedsPanel({ drones, selectedDroneId }: CameraFeedsPanelProps) {
   const [selectedId, setSelectedId] = useState<string | undefined>(drones[0]?.drone_id)
-  const selected = drones.find((drone) => drone.drone_id === selectedId) ?? drones[0]
+  const [searchParams] = useSearchParams()
+  const requestedId = selectedDroneId ?? searchParams.get("drone") ?? undefined
+  const selected =
+    drones.find((drone) => drone.drone_id === requestedId || drone.drone_id === selectedId) ??
+    drones[0]
 
   return (
     <section className="overflow-hidden border border-border/70 bg-card/80 shadow-sm backdrop-blur">
@@ -20,7 +25,7 @@ export function CameraFeedsPanel({ drones }: CameraFeedsPanelProps) {
       <div className="grid gap-3 p-4 sm:grid-cols-[1fr_9rem]">
         <div className="relative h-64 overflow-hidden bg-slate-950 ring-1 ring-inset ring-white/10">
           {selected ? (
-            <FeedScene drone={selected} />
+            <RealCameraOrSimulation key={selected.drone_id} drone={selected} />
           ) : (
             <div className="flex h-full items-center justify-center font-mono text-xs text-slate-500">
               NO SIGNAL
@@ -51,6 +56,64 @@ export function CameraFeedsPanel({ drones }: CameraFeedsPanelProps) {
       </div>
     </section>
   )
+}
+
+function RealCameraOrSimulation({ drone }: { drone: DroneStatus }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+
+  useEffect(() => {
+    let active = true
+    let nextStream: MediaStream | null = null
+
+    if (!drone.online || !navigator.mediaDevices?.getUserMedia) {
+      return () => {
+        active = false
+      }
+    }
+
+    void navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      .then((mediaStream) => {
+        nextStream = mediaStream
+        if (active) {
+          setStream(mediaStream)
+        } else {
+          mediaStream.getTracks().forEach((track) => track.stop())
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setStream(null)
+        }
+      })
+
+    return () => {
+      active = false
+      nextStream?.getTracks().forEach((track) => track.stop())
+    }
+  }, [drone.drone_id, drone.online])
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  if (stream) {
+    return (
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="size-full object-cover"
+        aria-label={`${drone.name} live camera`}
+      />
+    )
+  }
+
+  return <FeedScene drone={drone} />
 }
 
 function FeedScene({ drone }: { drone: DroneStatus }) {

@@ -6,7 +6,7 @@ import type {
   VisionUpdateEvent,
 } from "@ca/shared-types"
 import { Check, ChevronRight, ChevronsUpDown, FolderKanban, LoaderCircle, Plus } from "lucide-react"
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react"
 import { NavLink, Outlet, useNavigate, useSearchParams } from "react-router-dom"
 
 import {
@@ -68,6 +68,7 @@ type StudioState = {
   analysis: SceneAnalysis | null
   shotPlan: ShotPlan | null
   drones: DroneStatus[]
+  selectedDroneIds: string[]
   simulation: Simulation | null
   visionMap: Map<string, VisionUpdateEvent>
   loading: boolean
@@ -81,6 +82,9 @@ type StudioState = {
   setSimulation: (simulation: Simulation | null) => void
   setError: (error: string | null) => void
   setAnalysis: (analysis: SceneAnalysis) => void
+  setShotPlan: (shotPlan: ShotPlan | null) => void
+  setDrones: (drones: DroneStatus[]) => void
+  setSelectedDroneIds: (droneIds: string[]) => void
 }
 
 const StudioContext = createContext<StudioState | null>(null)
@@ -138,6 +142,7 @@ export function StudioWorkspace() {
   const [analysis, setAnalysis] = useState<SceneAnalysis | null>(null)
   const [shotPlan, setShotPlan] = useState<ShotPlan | null>(null)
   const [drones, setDrones] = useState<DroneStatus[]>([])
+  const [selectedDroneIds, setSelectedDroneIds] = useState<string[]>([])
   const [simulation, setSimulation] = useState<Simulation | null>(null)
   const [visionMap, setVisionMap] = useState(new Map<string, VisionUpdateEvent>())
   const [loading, setLoading] = useState(false)
@@ -158,6 +163,20 @@ export function StudioWorkspace() {
       .list()
       .then(setProjects)
       .catch(() => setError("Projects could not be loaded."))
+  }, [])
+
+  useEffect(() => {
+    void dronesService
+      .list()
+      .then((nextDrones) => {
+        setDrones(nextDrones)
+        setSelectedDroneIds((current) =>
+          current.length > 0
+            ? current.filter((id) => nextDrones.some((drone) => drone.drone_id === id))
+            : nextDrones.slice(0, 3).map((drone) => drone.drone_id),
+        )
+      })
+      .catch(() => setError("Drones could not be loaded."))
   }, [])
 
   // -- Load scenes for selected project --
@@ -292,11 +311,13 @@ export function StudioWorkspace() {
     try {
       const nextAnalysis = await scenesService.analyze(rawText, undefined, projectId)
       const nextDrones = await dronesService.list().catch(() => [] as DroneStatus[])
-      const nextPlan = await scenesService.createShotPlan(nextAnalysis.scene_id).catch(() => null)
       setAnalysis(nextAnalysis)
       setDrones(nextDrones)
-      setShotPlan(nextPlan)
-      navigate(`/studio/analysis${buildQS(projectId, nextAnalysis.scene_id)}`, { replace: true })
+      setSelectedDroneIds((current) =>
+        current.length > 0 ? current : nextDrones.slice(0, 3).map((drone) => drone.drone_id),
+      )
+      setShotPlan(null)
+      navigate(`/studio/drones${buildQS(projectId, nextAnalysis.scene_id)}`, { replace: true })
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "The scene could not be analyzed.")
     } finally {
@@ -311,7 +332,7 @@ export function StudioWorkspace() {
     setLoading(true)
     setError(null)
     try {
-      const nextPlan = await scenesService.createShotPlan(analysis.scene_id)
+      const nextPlan = await scenesService.createShotPlan(analysis.scene_id, selectedDroneIds)
       setShotPlan(nextPlan)
       setDrasticChange(null)
       navigate(`/studio/coverage${buildQS(projectId, analysis.scene_id)}`, { replace: true })
@@ -329,22 +350,41 @@ export function StudioWorkspace() {
   const selectedProject = projects.find((p) => p.project_id === projectId)
   const selectedScene = scenes.find((s) => s.scene_id === sceneId)
 
-  const state: StudioState = {
-    analysis,
-    shotPlan,
-    drones,
-    simulation,
-    visionMap,
-    loading,
-    error,
-    drasticChange,
-    clearDrasticChange,
-    analyze,
-    regenerateShotPlan,
-    setSimulation,
-    setError,
-    setAnalysis,
-  }
+  const state = useMemo<StudioState>(
+    () => ({
+      analysis,
+      shotPlan,
+      drones,
+      selectedDroneIds,
+      simulation,
+      visionMap,
+      loading,
+      error,
+      drasticChange,
+      clearDrasticChange,
+      analyze,
+      regenerateShotPlan,
+      setSimulation,
+      setError,
+      setAnalysis,
+      setShotPlan,
+      setDrones,
+      setSelectedDroneIds,
+    }),
+    [
+      analysis,
+      shotPlan,
+      drones,
+      selectedDroneIds,
+      simulation,
+      visionMap,
+      loading,
+      error,
+      drasticChange,
+      analyze,
+      regenerateShotPlan,
+    ],
+  )
 
   return (
     <StudioContext.Provider value={state}>
@@ -406,19 +446,22 @@ export function StudioWorkspace() {
           {(
             [
               ["input", "01 Input"],
-              ["analysis", "02 Analysis"],
-              ["coverage", "03 Coverage"],
-              ["simulation", "04 Simulation"],
+              ["drones", "02 Drones"],
+              ["analysis", "03 Analysis"],
+              ["coverage", "04 Coverage"],
+              ["simulation", "05 Simulation"],
             ] as const
           ).map(([to, label]) => {
             const complete =
               to === "analysis"
                 ? Boolean(analysis)
-                : to === "coverage"
-                  ? Boolean(shotPlan)
-                  : to === "simulation"
-                    ? Boolean(simulation)
-                    : false
+                : to === "drones"
+                  ? selectedDroneIds.length > 0
+                  : to === "coverage"
+                    ? Boolean(shotPlan)
+                    : to === "simulation"
+                      ? Boolean(simulation)
+                      : false
             return (
               <NavLink
                 key={to}

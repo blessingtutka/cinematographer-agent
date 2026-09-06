@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { CheckCircle2, ChevronRight, Film, FolderOpen, Radio, RefreshCw } from "lucide-react"
+import { Check, CheckCircle2, ChevronRight, Film, FolderOpen, Radio, RefreshCw } from "lucide-react"
 import { useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { CameraFeedsPanel } from "@/components/camera-feeds/CameraFeedsPanel"
 import { ControlBar } from "@/components/control-bar/ControlBar"
@@ -104,6 +104,109 @@ export function StudioInput() {
             </motion.p>
           )}
         </AnimatePresence>
+      </div>
+    </StudioStage>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 02 Drones
+// ---------------------------------------------------------------------------
+export function StudioDrones() {
+  const navigate = useNavigate()
+  const { analysis, drones, selectedDroneIds, setSelectedDroneIds, setShotPlan, setError } =
+    useStudio()
+  const [loading, setLoading] = useState(false)
+
+  function toggleDrone(droneId: string) {
+    if (selectedDroneIds.includes(droneId)) {
+      setSelectedDroneIds(selectedDroneIds.filter((id) => id !== droneId))
+      return
+    }
+    if (selectedDroneIds.length >= 3) {
+      setError("Select up to three drones for a scene.")
+      return
+    }
+    setSelectedDroneIds([...selectedDroneIds, droneId])
+  }
+
+  async function continueToAnalysis() {
+    if (!analysis || selectedDroneIds.length === 0) {
+      setError("Select at least one drone before continuing.")
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      setShotPlan(await scenesService.createShotPlan(analysis.scene_id, selectedDroneIds))
+      navigate(`/studio/analysis${window.location.search}`, { replace: true })
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Could not create the shot plan.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <StudioStage>
+      <div className="mx-auto max-w-3xl space-y-5">
+        <div className="border border-border/70 bg-card/60 p-5">
+          <p className="font-mono text-xs uppercase tracking-widest text-primary">
+            02 / Scene fleet
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">Choose up to three cameras</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Fleet registration and Bluetooth pairing live in the Drones page. Choose the aircraft
+            for this scene here.
+          </p>
+          <div className="mt-5 grid gap-2">
+            {drones.map((drone) => {
+              const selected = selectedDroneIds.includes(drone.drone_id)
+              return (
+                <button
+                  key={drone.drone_id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleDrone(drone.drone_id)}
+                  className={`flex items-center gap-3 border p-4 text-left transition-colors ${selected ? "border-primary bg-primary/10" : "border-border/60 hover:border-primary/50"}`}
+                >
+                  <span
+                    className={`flex size-7 items-center justify-center border ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+                  >
+                    <Check className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{drone.name}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {drone.online ? "Online and ready" : "Offline · pair from Drones"}
+                    </span>
+                  </span>
+                  <span
+                    className={`size-2 rounded-full ${drone.online ? "bg-emerald-400" : "bg-muted-foreground/30"}`}
+                  />
+                </button>
+              )
+            })}
+          </div>
+          {drones.length === 0 && (
+            <p className="mt-5 text-sm text-muted-foreground">
+              No registered drones. Open Drones from the sidebar to add one.
+            </p>
+          )}
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-4">
+            <span className="text-xs text-muted-foreground">
+              {selectedDroneIds.length}/3 selected
+            </span>
+            <Button
+              type="button"
+              disabled={loading || selectedDroneIds.length === 0 || !analysis}
+              onClick={() => void continueToAnalysis()}
+            >
+              {loading ? "Preparing…" : "Continue to analysis"}
+              <ChevronRight />
+            </Button>
+          </div>
+        </div>
       </div>
     </StudioStage>
   )
@@ -297,7 +400,16 @@ export function StudioCoverage() {
 // 04 Simulation
 // ---------------------------------------------------------------------------
 export function StudioSimulation() {
-  const { analysis, shotPlan, drones, simulation, setSimulation, setError, visionMap } = useStudio()
+  const {
+    analysis,
+    shotPlan,
+    drones,
+    selectedDroneIds,
+    simulation,
+    setSimulation,
+    setError,
+    visionMap,
+  } = useStudio()
 
   const liveDrones = drones
   const activeDroneId = liveDrones.find((drone) => drone.is_recording)?.drone_id
@@ -325,6 +437,13 @@ export function StudioSimulation() {
           <div className="space-y-5">
             <ControlBar
               sceneId={analysis?.scene_id}
+              droneIds={selectedDroneIds}
+              allDronesOnline={
+                selectedDroneIds.length > 0 &&
+                selectedDroneIds.every(
+                  (id) => drones.find((drone) => drone.drone_id === id)?.online === true,
+                )
+              }
               simulation={simulation}
               onChange={setSimulation}
               onError={setError}
