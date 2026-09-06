@@ -54,4 +54,5 @@ export interface SceneAnalysis {
   emotions: EmotionalTone[]
   cinematic_beats: CinematicBeat[]
   dialogue: DialogueLine[]
+  style_reference?: string | null
 }

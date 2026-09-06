@@ -120,6 +120,7 @@ class SceneAnalysis(BaseModel):
     emotions: list[EmotionalTone]
     cinematic_beats: list[CinematicBeat]
     dialogue: list[DialogueLine]
+    style_reference: Optional[str] = None
 
 
 class Shot(BaseModel):
@@ -143,6 +144,7 @@ class SourceReference(BaseModel):
     title: str
     url: str
     excerpt: str 
+    extracted: bool = False
 
 class ResearchSource(BaseModel):
     """One research query and what it found. `reference_count` stays as a
@@ -170,6 +172,7 @@ class ShotPlan(BaseModel):
     shots: list[Shot] = Field(min_length=1, max_length=20)
     research_sources: list[ResearchSource]
     research_warning: Optional[str] = None
+    research_confidence: float = Field(ge=0.0, le=1.0, default=0.0)
     cinematographer_notes: str
 
 

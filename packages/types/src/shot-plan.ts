@@ -3,24 +3,10 @@
  */
 
 export type ShotType =
-  | 'WIDE'
-  | 'MEDIUM'
-  | 'CLOSE_UP'
-  | 'EXTREME_CLOSE_UP'
-  | 'OVER_SHOULDER'
-  | 'LOW_ANGLE'
-  | 'HIGH_ANGLE'
+  "WIDE" | "MEDIUM" | "CLOSE_UP" | "EXTREME_CLOSE_UP" | "OVER_SHOULDER" | "LOW_ANGLE" | "HIGH_ANGLE"
 
 export type CameraMovement =
-  | 'STATIC'
-  | 'MOVE_TO'
-  | 'DOLLY_IN'
-  | 'DOLLY_OUT'
-  | 'TRACK'
-  | 'FOLLOW'
-  | 'ORBIT'
-  | 'PAN'
-  | 'TILT'
+  "STATIC" | "MOVE_TO" | "DOLLY_IN" | "DOLLY_OUT" | "TRACK" | "FOLLOW" | "ORBIT" | "PAN" | "TILT"
 
 export interface Shot {
   shot_id: string
@@ -43,8 +29,16 @@ export interface Shot {
 export interface ResearchSource {
   /** The search query that produced these results */
   query: string
+  references?: ResearchReference[]
   /** Number of references found for this query */
   reference_count: number
+}
+
+export interface ResearchReference {
+  title: string
+  url: string
+  excerpt: string
+  extracted?: boolean
 }
 
 export interface ShotPlan {
@@ -56,6 +50,7 @@ export interface ShotPlan {
   research_sources: ResearchSource[]
   /** Present when research data was unavailable or degraded */
   research_warning?: string
+  research_confidence?: number
   /** Overall notes from the Cinematographer_Agent */
   cinematographer_notes: string
 }
