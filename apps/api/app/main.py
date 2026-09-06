@@ -7,12 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.base import get_engine
 from app.drone.manager import DroneManager
-from app.drone.virtual_drone import VirtualDrone
 from app.simulation.websocket import WebSocketManager
 from app.config import get_settings
 from app.core.security import decode_token_of_type
 from app.routers import drones, health, projects, scenes, simulations, auth, two_factor, subscription
-from cinematography_schema.schema import Vector3
 
 logger = logging.getLogger(__name__) 
 
@@ -20,10 +18,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.drone_manager = DroneManager()
-    for drone_id, name in (("drone-001", "Alpha"), ("drone-002", "Bravo"), ("drone-003", "Charlie")):
-        app.state.drone_manager.register(
-            VirtualDrone(drone_id, name, Vector3(x=0, y=1.8, z=0))
-        )
     app.state.simulation_engines = {}
     app.state.websocket_manager = WebSocketManager()
     yield

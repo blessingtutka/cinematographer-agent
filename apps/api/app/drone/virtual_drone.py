@@ -14,9 +14,18 @@ from .base import Drone
 
 
 class VirtualDrone(Drone):
-    def __init__(self, drone_id: str, name: str, home_position: Vector3 | None = None) -> None:
+    def __init__(
+        self,
+        drone_id: str,
+        name: str,
+        home_position: Vector3 | None = None,
+        online: bool = False,
+        bluetooth_device_id: str | None = None,
+    ) -> None:
         self.drone_id = drone_id
         self.name = name
+        self.online = online
+        self.bluetooth_device_id = bluetooth_device_id
         self.home_position = home_position or Vector3(x=0, y=0, z=0)
         self.current_position = self.home_position.model_copy()
         self.current_orientation = {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}
@@ -78,6 +87,9 @@ class VirtualDrone(Drone):
             position=self.current_position.model_copy(),
             orientation=dict(self.current_orientation),
             is_recording=self.is_recording,
+            online=self.online,
+            connection_type="bluetooth",
+            bluetooth_device_id=self.bluetooth_device_id,
             active_shot=self.active_shot,
             vision=self.latest_vision,
         )

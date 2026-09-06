@@ -11,9 +11,12 @@ from app.core.deps import get_current_user
 from app.models.scene import SceneModel
 from app.models.shot_plan import ShotPlanModel
 from app.models.simulation import SimulationModel
+from app.models.drone import DroneModel
+from app.models.user import UserModel
+from app.drone.virtual_drone import VirtualDrone
 from app.simulation.engine import SimulationEngine
 from app.simulation.websocket import WebSocketManager
-from cinematography_schema.schema import SceneAnalysis, ShotPlan, SimulationState
+from cinematography_schema.schema import SceneAnalysis, ShotPlan, SimulationState, Vector3
 
 router = APIRouter(
     prefix="/simulations",
@@ -24,6 +27,7 @@ router = APIRouter(
 
 class CreateSimulationRequest(BaseModel):
     scene_id: str
+    drone_ids: list[str] = []
 
 
 def _timestamp() -> str:
@@ -55,7 +59,12 @@ def can_transition(current: SimulationState, target: SimulationState) -> bool:
 
 
 @router.post("")
-async def create_simulation(request: CreateSimulationRequest, http_request: Request, db: AsyncSession = Depends(get_db)) -> dict:
+async def create_simulation(
+    request: CreateSimulationRequest,
+    http_request: Request,
+    user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
     scene = (await db.execute(select(SceneModel).where(SceneModel.scene_id == request.scene_id))).scalar_one_or_none()
     if scene is None:
         raise HTTPException(status_code=404, detail=f"Scene {request.scene_id} not found")
@@ -74,15 +83,49 @@ async def create_simulation(request: CreateSimulationRequest, http_request: Requ
     except Exception:
         pass  # Vision degrades gracefully if analysis is missing
 
+    selected_ids = request.drone_ids
+    rows = (
+        await db.execute(
+            select(DroneModel).where(
+                DroneModel.owner_id == user.id,
+                DroneModel.drone_id.in_(selected_ids),
+            )
+        )
+    ).scalars().all()
+    missing = set(selected_ids) - {drone.drone_id for drone in rows}
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Unknown drone(s): {', '.join(sorted(missing))}")
+    if not selected_ids:
+        raise HTTPException(status_code=409, detail="Select at least one registered drone")
+    offline = [drone.name for drone in rows if not drone.online]
+    if offline:
+        raise HTTPException(status_code=409, detail=f"Connect all selected drones before starting: {', '.join(offline)}")
+    plan_names = {shot.drone_name for shot in shot_plan.shots}
+    selected_names = {drone.name for drone in rows}
+    unavailable_names = plan_names - selected_names
+    if unavailable_names:
+        raise HTTPException(status_code=409, detail=f"Select drones used by the shot plan: {', '.join(sorted(unavailable_names))}")
+
     simulation_id = str(uuid4())
     row = SimulationModel(simulation_id=simulation_id, scene_id=request.scene_id, state=SimulationState.CREATED.value)
     db.add(row)
     await db.flush()
     engines, websocket_manager = _runtime(http_request)
+    manager = http_request.app.state.drone_manager
+    for drone in rows:
+        manager.register(
+            VirtualDrone(
+                drone_id=drone.drone_id,
+                name=drone.name,
+                home_position=Vector3(x=0, y=1.8, z=0),
+                online=drone.online,
+                bluetooth_device_id=drone.bluetooth_device_id,
+            )
+        )
     engines[simulation_id] = SimulationEngine(
         simulation_id,
         shot_plan,
-        http_request.app.state.drone_manager,
+        manager.simulation_manager(selected_ids),
         websocket_manager,
         scene_analysis=scene_analysis,
     )

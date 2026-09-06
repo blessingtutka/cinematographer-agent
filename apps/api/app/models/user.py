@@ -44,6 +44,7 @@ class UserModel(Base):
     projects = relationship("ProjectModel", back_populates="owner", cascade="all, delete-orphan")
     backup_codes = relationship("BackupCode", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    drones = relationship("DroneModel", back_populates="owner", cascade="all, delete-orphan")
 
     @property
     def project_limit(self) -> int | None:
