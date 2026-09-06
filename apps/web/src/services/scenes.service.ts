@@ -6,6 +6,16 @@ import { getErrorMessage } from "@/lib/utils/error-handler"
 import api from "./axios.service"
 
 export const scenesService = {
+  list: async (): Promise<SceneAnalysis[]> => {
+    try {
+      const { data } = await api.get<SceneAnalysis[]>("/scenes")
+      return data
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to load scenes"))
+      throw error
+    }
+  },
+
   analyze: async (
     rawText: string,
     styleReference?: string,
@@ -43,6 +53,32 @@ export const scenesService = {
       values,
     )
     return data
+  },
+
+  reanalyze: async (
+    sceneId: string,
+    rawText: string,
+    styleReference?: string | null,
+  ): Promise<SceneAnalysis> => {
+    try {
+      const { data } = await api.post<SceneAnalysis>(
+        `/scenes/${encodeURIComponent(sceneId)}/reanalyze`,
+        { raw_text: rawText, style_reference: styleReference },
+      )
+      return data
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to regenerate scene analysis"))
+      throw error
+    }
+  },
+
+  delete: async (sceneId: string): Promise<void> => {
+    try {
+      await api.delete(`/scenes/${encodeURIComponent(sceneId)}`)
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete scene"))
+      throw error
+    }
   },
 
   createShotPlan: async (sceneId: string, droneIds: string[] = []): Promise<ShotPlan> => {

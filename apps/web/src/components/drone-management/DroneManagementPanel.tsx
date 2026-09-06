@@ -3,6 +3,16 @@ import { Bluetooth, Camera, Check, Pencil, Plus, Trash2, Unplug, Wifi } from "lu
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +47,7 @@ export function DroneManagementPanel({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<DroneStatus | null>(null)
 
   async function addDrone(event: { preventDefault: () => void }) {
     event.preventDefault()
@@ -100,6 +111,7 @@ export function DroneManagementPanel({
   async function remove(drone: DroneStatus) {
     try {
       await dronesService.remove(drone.drone_id)
+      setRemoveTarget(null)
       onDronesChange(drones.filter((item) => item.drone_id !== drone.drone_id))
       onSelectionChange(selectedDroneIds.filter((id) => id !== drone.drone_id))
     } catch (reason: unknown) {
@@ -227,7 +239,7 @@ export function DroneManagementPanel({
                 size="icon-sm"
                 variant="ghost"
                 aria-label={`Remove ${drone.name}`}
-                onClick={() => void remove(drone)}
+                onClick={() => setRemoveTarget(drone)}
               >
                 <Trash2 />
               </Button>
@@ -235,6 +247,32 @@ export function DroneManagementPanel({
           </div>
         ))}
       </div>
+      <AlertDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {setRemoveTarget(null)}
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this drone?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes &quot;{removeTarget?.name}&quot; from your registered aircraft.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (removeTarget) {void remove(removeTarget)}
+              }}
+            >
+              Remove drone
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <p className="mt-4 text-xs text-muted-foreground">
         {selectedDroneIds.length === 0
           ? "Select at least one drone before running a simulation."

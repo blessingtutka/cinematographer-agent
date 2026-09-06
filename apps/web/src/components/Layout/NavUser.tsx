@@ -1,8 +1,19 @@
 "use client"
 
 import { EllipsisVertical, LogOut, Settings, UserCircle } from "lucide-react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -23,6 +34,7 @@ import { type User } from "@/providers/user.provider"
 
 export function NavUser({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   const { isMobile } = useSidebar()
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   return (
     <SidebarMenu>
@@ -90,12 +102,28 @@ export function NavUser({ user, onSignOut }: { user: User; onSignOut: () => void
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={onSignOut}>
+            <DropdownMenuItem onClick={() => setLogoutDialogOpen(true)}>
               <LogOut />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will need to sign in again to access your productions and scenes.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={onSignOut}>
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SidebarMenuItem>
     </SidebarMenu>
   )

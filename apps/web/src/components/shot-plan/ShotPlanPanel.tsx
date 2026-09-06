@@ -1,5 +1,14 @@
 import type { ShotPlan } from "@ca/shared-types"
-import { Camera, Clock3, Crosshair, FileText, Radio, Sparkles } from "lucide-react"
+import {
+  Camera,
+  CheckCircle2,
+  Clock3,
+  Crosshair,
+  ExternalLink,
+  FileText,
+  Radio,
+  Sparkles,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 type ShotPlanPanelProps = {
@@ -55,27 +64,6 @@ export function ShotPlanPanel({ plan, activeShotId = null, onSelectShot }: ShotP
         </p>
       </div>
 
-      {plan.research_sources.length > 0 && (
-        <div className="mt-5 border-b border-border/60 pb-5">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            <FileText className="size-4" /> Research references
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {plan.research_sources.map((source) => (
-              <div
-                key={source.query}
-                className="border border-border/60 bg-background/50 p-3 text-xs"
-              >
-                <span className="text-foreground/80">{source.query}</span>
-                <span className="mt-1 block font-mono text-primary">
-                  {source.reference_count} references
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <ol className="mt-5 max-h-136 space-y-3 overflow-y-auto pr-1">
         {plan.shots.map((shot) => {
           const beat = shot.cinematic_beat_id ? beats.get(shot.cinematic_beat_id) : undefined
@@ -129,6 +117,55 @@ export function ShotPlanPanel({ plan, activeShotId = null, onSelectShot }: ShotP
           )
         })}
       </ol>
+
+      {plan.research_sources.length > 0 && (
+        <div className="mt-5 border-t border-border/60 pt-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <FileText className="size-4" /> Research references
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {plan.research_sources.map((source) => (
+              <div
+                key={source.query}
+                className="border border-border/60 bg-background/50 p-3 text-xs"
+              >
+                <span className="text-foreground/80">{source.query}</span>
+                <span className="mt-1 block font-mono text-primary">
+                  {source.reference_count} references
+                </span>
+                {source.references?.slice(0, 2).map((reference) => (
+                  <a
+                    key={reference.url}
+                    className="mt-2 block border-t border-border/40 pt-2 text-foreground/70 hover:text-primary"
+                    href={reference.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="flex items-center gap-1 font-medium">
+                      {reference.extracted && <CheckCircle2 className="size-3 text-secondary" />}
+                      {reference.title}
+                      <ExternalLink className="size-3" />
+                    </span>
+                    <span className="mt-1 line-clamp-2 block text-muted-foreground">
+                      {reference.excerpt}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-secondary">
+            <Sparkles className="size-3" /> Parallel evidence confidence:{" "}
+            {Math.round((plan.research_confidence ?? 0) * 100)}%
+          </div>
+        </div>
+      )}
+
+      {plan.research_warning && (
+        <div className="mt-5 border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+          Research trail degraded: {plan.research_warning}
+        </div>
+      )}
     </section>
   )
 }

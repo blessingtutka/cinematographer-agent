@@ -1,5 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { Check, CheckCircle2, ChevronRight, Film, FolderOpen, Radio, RefreshCw } from "lucide-react"
+import {
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  Film,
+  FolderOpen,
+  Radio,
+  RefreshCw,
+  Trash2,
+} from "lucide-react"
 import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
@@ -10,6 +19,16 @@ import { SceneAnalysisPanel } from "@/components/scene-analysis/SceneAnalysisPan
 import { SceneChangeBanner } from "@/components/scene-change/SceneChangeBanner"
 import { SceneInputPanel } from "@/components/scene-input/SceneInputPanel"
 import { ShotPlanPanel } from "@/components/shot-plan/ShotPlanPanel"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { VisionOverlayPanel } from "@/components/vision-overlay/VisionOverlayPanel"
 import { scenesService } from "@/services/scenes.service"
@@ -249,9 +268,14 @@ function ExistingSceneCard({
 // 02 Analysis
 // ---------------------------------------------------------------------------
 export function StudioAnalysis() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const projectId = searchParams.get("project") ?? undefined
   const {
     analysis,
     setAnalysis,
+    setShotPlan,
+    selectedDroneIds,
     loading,
     setError,
     drasticChange,
@@ -262,6 +286,9 @@ export function StudioAnalysis() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [reanalyzing, setReanalyzing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   if (!analysis) {
     return (
@@ -293,6 +320,49 @@ export function StudioAnalysis() {
       setError("Could not save changes.")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function regenerateAnalysis(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    const form = event.currentTarget.form
+    if (!form || !analysis) {return}
+    const rawText = String(new FormData(form).get("raw_text") ?? "")
+    setReanalyzing(true)
+    setError(null)
+    try {
+      const nextAnalysis = await scenesService.reanalyze(
+        analysis.scene_id,
+        rawText,
+        analysis.style_reference,
+      )
+      setAnalysis(nextAnalysis)
+      const nextPlan = await scenesService.createShotPlan(nextAnalysis.scene_id, selectedDroneIds)
+      setShotPlan(nextPlan)
+      setSaved(false)
+      clearDrasticChange()
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Could not regenerate analysis.")
+    } finally {
+      setReanalyzing(false)
+    }
+  }
+
+  async function deleteScene() {
+    if (!analysis) {return}
+    setDeleting(true)
+    try {
+      await scenesService.delete(analysis.scene_id)
+      setDeleteDialogOpen(false)
+      setAnalysis(null)
+      setShotPlan(null)
+      navigate(`/studio/input${projectId ? `?project=${encodeURIComponent(projectId)}` : ""}`, {
+        replace: true,
+      })
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Could not delete scene.")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -353,19 +423,65 @@ export function StudioAnalysis() {
 
           {saveError && <p className="text-xs text-destructive">{saveError}</p>}
 
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <Button type="submit" disabled={saving} size="sm">
-              {saving ? (
-                <RefreshCw className="size-3.5 animate-spin" />
-              ) : (
-                <CheckCircle2 className="size-3.5" />
-              )}
-              {saving ? "Saving…" : "Save changes"}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deleting}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="size-3.5" />
+              {deleting ? "Deleting…" : "Delete scene"}
             </Button>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={reanalyzing || saving}
+                onClick={(event) => void regenerateAnalysis(event)}
+              >
+                {reanalyzing ? (
+                  <RefreshCw className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3.5" />
+                )}
+                {reanalyzing ? "Regenerating…" : "Regenerate analysis"}
+              </Button>
+              <Button type="submit" disabled={saving} size="sm">
+                {saving ? (
+                  <RefreshCw className="size-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="size-3.5" />
+                )}
+                {saving ? "Saving…" : "Save changes"}
+              </Button>
+            </div>
           </div>
         </form>
 
         <SceneAnalysisPanel analysis={analysis} />
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this scene?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes &quot;{analysis.title}&quot; and its generated shot plan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => void deleteScene()}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete scene"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </StudioStage>
   )
