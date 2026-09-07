@@ -154,7 +154,11 @@ export function StudioWorkspace() {
   const [projects, setProjects] = useState<Project[]>([])
   const [scenes, setScenes] = useState<ProjectScene[]>([])
 
-  const { lastEvent } = useSimulationWS(simulation?.simulation_id, simulation?.state === "RUNNING")
+  const {
+    drones: websocketDrones,
+    vision: websocketVision,
+    simulationState,
+  } = useSimulationWS(simulation?.simulation_id, simulation?.state === "RUNNING")
   const { user } = useUser()
 
   // -- Load projects once --
@@ -241,32 +245,27 @@ export function StudioWorkspace() {
     }
   }, [sceneId, projectId, navigate])
 
-  // -- Accumulate vision events --
   useEffect(() => {
-    if (lastEvent?.type !== "vision_update") {
-      return
-    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVisionMap((prev) => new Map(prev).set(lastEvent.drone_id, lastEvent))
-  }, [lastEvent])
+    setVisionMap(websocketVision)
+  }, [websocketVision])
 
   useEffect(() => {
-    if (lastEvent?.type !== "drone_update") {
+    if (websocketDrones.length === 0) {
       return
     }
     // Keep the scene authoritative to the latest server simulation snapshot.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDrones(lastEvent.drones)
-  }, [lastEvent])
+    setDrones(websocketDrones)
+  }, [websocketDrones])
 
   useEffect(() => {
-    if (lastEvent?.type !== "state_change") {
-      return
+    if (simulationState) {
+      // WebSocket state is an external event; mirror it into the lifecycle control state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSimulation((current) => (current ? { ...current, state: simulationState } : current))
     }
-    // Mirror the server lifecycle so controls remain accurate after playback ends.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSimulation((current) => (current ? { ...current, state: lastEvent.new_state } : current))
-  }, [lastEvent])
+  }, [simulationState])
 
   // -- Navigation helpers --
 

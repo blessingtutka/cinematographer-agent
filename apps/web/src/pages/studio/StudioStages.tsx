@@ -175,8 +175,7 @@ export function StudioDrones() {
           </p>
           <h2 className="mt-2 text-xl font-semibold">Choose up to three cameras</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Fleet registration and Bluetooth pairing live in the Drones page. Choose the aircraft
-            for this scene here.
+            Choose the virtual aircraft that should execute this scene here.
           </p>
           <div className="mt-5 grid gap-2">
             {drones.map((drone) => {
@@ -197,12 +196,10 @@ export function StudioDrones() {
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{drone.name}</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {drone.online ? "Online and ready" : "Offline · pair from Drones"}
+                      Virtual camera ready
                     </span>
                   </span>
-                  <span
-                    className={`size-2 rounded-full ${drone.online ? "bg-emerald-400" : "bg-muted-foreground/30"}`}
-                  />
+                  <span className="size-2 rounded-full bg-emerald-400" />
                 </button>
               )
             })}
@@ -326,7 +323,9 @@ export function StudioAnalysis() {
   async function regenerateAnalysis(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault()
     const form = event.currentTarget.form
-    if (!form || !analysis) {return}
+    if (!form || !analysis) {
+      return
+    }
     const rawText = String(new FormData(form).get("raw_text") ?? "")
     setReanalyzing(true)
     setError(null)
@@ -349,7 +348,9 @@ export function StudioAnalysis() {
   }
 
   async function deleteScene() {
-    if (!analysis) {return}
+    if (!analysis) {
+      return
+    }
     setDeleting(true)
     try {
       await scenesService.delete(analysis.scene_id)
@@ -543,28 +544,30 @@ export function StudioSimulation() {
           </div>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
-          <DirectorViewPanel
-            drones={liveDrones}
-            analysis={analysis}
-            plan={shotPlan}
-            paused={simulation?.state === "PAUSED"}
-          />
-          <div className="space-y-5">
+        <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
+          <div className="grid min-w-0 gap-5">
+            <DirectorViewPanel
+              drones={liveDrones}
+              analysis={analysis}
+              plan={shotPlan}
+              paused={simulation?.state === "PAUSED"}
+            />
             <ControlBar
               sceneId={analysis?.scene_id}
               droneIds={selectedDroneIds}
-              allDronesOnline={
-                selectedDroneIds.length > 0 &&
-                selectedDroneIds.every(
-                  (id) => drones.find((drone) => drone.drone_id === id)?.online === true,
-                )
-              }
+              hasSelectedDrone={selectedDroneIds.length > 0}
               simulation={simulation}
               onChange={setSimulation}
               onError={setError}
             />
-            <CameraFeedsPanel drones={liveDrones} />
+          </div>
+          <div className="grid min-w-0 gap-5">
+            <CameraFeedsPanel
+              drones={liveDrones}
+              analysis={analysis}
+              plan={shotPlan}
+              paused={simulation?.state === "PAUSED"}
+            />
             <VisionOverlayPanel visionMap={visionMap} activeDroneId={activeDroneId} />
           </div>
         </div>

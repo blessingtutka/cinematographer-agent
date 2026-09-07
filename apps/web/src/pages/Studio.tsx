@@ -120,6 +120,8 @@ function Studio() {
       <div className="mt-5" id="simulation-controls">
         <ControlBar
           sceneId={analysis?.scene_id}
+          droneIds={drones.map((drone) => drone.drone_id)}
+          hasSelectedDrone={drones.length > 0}
           simulation={simulation}
           onChange={setSimulation}
           onError={setError}

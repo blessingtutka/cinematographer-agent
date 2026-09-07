@@ -219,16 +219,13 @@ class VisionAnalysis(BaseModel):
 
 
 class DroneStatus(BaseModel):
-    """Registration and real-time status snapshot of a drone."""
+    """Registration and real-time status snapshot of a virtual drone."""
 
     drone_id: str
     name: str
     position: Vector3
     orientation: dict  # quaternion {x, y, z, w}
     is_recording: bool
-    online: bool = False
-    connection_type: str = "bluetooth"
-    bluetooth_device_id: Optional[str] = None
     active_shot: Optional[Shot] = None
     vision: Optional[VisionAnalysis] = None
 

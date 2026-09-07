@@ -1,5 +1,5 @@
 import type { DroneStatus } from "@ca/shared-types"
-import { Bluetooth, Camera, Plus, Trash2, Wifi, WifiOff } from "lucide-react"
+import { Camera, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -17,16 +17,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { dronesService } from "@/services/drones.service"
 
-type BluetoothNavigator = Navigator & {
-  bluetooth?: {
-    requestDevice: (options: { acceptAllDevices: boolean }) => Promise<{ id: string }>
-  }
-}
-
 export function DroneSidebarPanel() {
   const [drones, setDrones] = useState<DroneStatus[]>([])
   const [name, setName] = useState("")
-  const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<DroneStatus | null>(null)
 
@@ -53,32 +46,6 @@ export function DroneSidebarPanel() {
     }
   }
 
-  async function toggleConnection(drone: DroneStatus) {
-    setBusyId(drone.drone_id)
-    try {
-      if (drone.online) {
-        const updated = await dronesService.disconnect(drone.drone_id)
-        setDrones((current) =>
-          current.map((item) => (item.drone_id === updated.drone_id ? updated : item)),
-        )
-      } else {
-        const bluetooth = (navigator as BluetoothNavigator).bluetooth
-        const device = bluetooth
-          ? await bluetooth.requestDevice({ acceptAllDevices: true })
-          : undefined
-        const updated = await dronesService.connect(drone.drone_id, device?.id)
-        setDrones((current) =>
-          current.map((item) => (item.drone_id === updated.drone_id ? updated : item)),
-        )
-      }
-      setError(null)
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : "Bluetooth connection failed")
-    } finally {
-      setBusyId(null)
-    }
-  }
-
   async function remove(drone: DroneStatus) {
     try {
       await dronesService.remove(drone.drone_id)
@@ -93,7 +60,7 @@ export function DroneSidebarPanel() {
     <div className="px-2 py-3">
       <div className="mb-2 flex items-center justify-between px-2">
         <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/60">
-          <Bluetooth className="size-3" /> Drones
+          <Camera className="size-3" /> Drones
         </p>
         <span className="font-mono text-[10px] text-sidebar-foreground/50">{drones.length}</span>
       </div>
@@ -116,33 +83,15 @@ export function DroneSidebarPanel() {
             key={drone.drone_id}
             className="group flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-sidebar-accent"
           >
-            <span
-              className={`size-1.5 shrink-0 rounded-full ${drone.online ? "bg-emerald-400" : "bg-sidebar-foreground/30"}`}
-            />
+            <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
             <span className="min-w-0 flex-1 truncate text-xs">{drone.name}</span>
-            <button
-              type="button"
-              title={drone.online ? "Disconnect" : "Connect Bluetooth"}
-              disabled={busyId === drone.drone_id}
-              onClick={() => void toggleConnection(drone)}
-              className="text-sidebar-foreground/60 hover:text-sidebar-foreground disabled:opacity-50"
-            >
-              {drone.online ? <Wifi className="size-3" /> : <WifiOff className="size-3" />}
-            </button>
-            {drone.online && (
-              <Button
-                asChild
-                size="icon-xs"
-                variant="ghost"
-                aria-label={`View ${drone.name} camera`}
+            <Button asChild size="icon-xs" variant="ghost" aria-label={`View ${drone.name} camera`}>
+              <Link
+                to={`/studio/simulation?drone=${encodeURIComponent(drone.drone_id)}#camera-feeds`}
               >
-                <Link
-                  to={`/studio/simulation?drone=${encodeURIComponent(drone.drone_id)}#camera-feeds`}
-                >
-                  <Camera />
-                </Link>
-              </Button>
-            )}
+                <Camera />
+              </Link>
+            </Button>
             <button
               type="button"
               title={`Remove ${drone.name}`}
@@ -160,7 +109,9 @@ export function DroneSidebarPanel() {
       <AlertDialog
         open={removeTarget !== null}
         onOpenChange={(open) => {
-          if (!open) {setRemoveTarget(null)}
+          if (!open) {
+            setRemoveTarget(null)
+          }
         }}
       >
         <AlertDialogContent>
@@ -175,7 +126,9 @@ export function DroneSidebarPanel() {
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                if (removeTarget) {void remove(removeTarget)}
+                if (removeTarget) {
+                  void remove(removeTarget)
+                }
               }}
             >
               Remove drone

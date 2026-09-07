@@ -276,7 +276,7 @@ async def analyze_drone_view(
         drone_id=drone.drone_id,
         drone_name=drone.name,
         timestamp=datetime.now(timezone.utc).isoformat(),
-        scene_description=f"{drone.name} camera online — awaiting analysis",
+        scene_description=f"{drone.name} camera ready — awaiting analysis",
         detected_objects=[],
         composition_score=5,
         recommended_adjustment=None,

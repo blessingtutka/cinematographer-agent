@@ -206,10 +206,21 @@ class SimulationEngine:
                 continue
             if drone.get_status().active_shot is not None:
                 break
+            self._aim_at_subject(drone, shot)
             self.drone_manager.dispatch_shot(shot)
             started.append(shot)
             self._shot_index += 1
         return started
+
+    def _aim_at_subject(self, drone: VirtualDrone, shot: Shot) -> None:
+        if self.scene_analysis is None:
+            return
+        subject = next(
+            (character for character in self.scene_analysis.characters if character.display_name == shot.subject),
+            self.scene_analysis.characters[0] if self.scene_analysis.characters else None,
+        )
+        if subject is not None:
+            drone.set_subject_position(subject.initial_position)
 
     def _timestamp(self) -> str:
         return datetime.now(timezone.utc).isoformat()

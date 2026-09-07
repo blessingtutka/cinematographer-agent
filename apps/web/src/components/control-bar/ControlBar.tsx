@@ -9,7 +9,7 @@ import { simulationsService } from "@/services/simulations.service"
 type ControlBarProps = {
   sceneId?: string
   droneIds?: string[]
-  allDronesOnline?: boolean
+  hasSelectedDrone?: boolean
   simulation: Simulation | null
   onChange: (simulation: Simulation) => void
   onError: (message: string) => void
@@ -18,7 +18,7 @@ type ControlBarProps = {
 export function ControlBar({
   sceneId,
   droneIds,
-  allDronesOnline,
+  hasSelectedDrone,
   simulation,
   onChange,
   onError,
@@ -44,7 +44,7 @@ export function ControlBar({
   }
 
   async function play() {
-    if (!simulation && sceneId) {
+    if ((!simulation || simulation.state === "COMPLETED") && sceneId) {
       return run(async () => {
         const created = await simulationsService.create(sceneId, droneIds)
         return simulationsService.start(created.simulation_id)
@@ -58,7 +58,7 @@ export function ControlBar({
   return (
     <motion.div
       layout
-      className="sticky bottom-4 z-10 flex items-center justify-between gap-4 border border-border/70 bg-card/95 p-3 text-card-foreground shadow-xl shadow-black/20 backdrop-blur dark:bg-card/95"
+      className="flex items-center justify-between gap-4 border border-border/70 bg-card/95 p-4 text-card-foreground shadow-xl shadow-black/20 backdrop-blur dark:bg-card/95"
     >
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -70,7 +70,7 @@ export function ControlBar({
         <Button
           size="icon"
           aria-label="Start or resume simulation"
-          disabled={busy || !sceneId || !allDronesOnline || state === "COMPLETED"}
+          disabled={busy || !sceneId || !hasSelectedDrone}
           onClick={() => void play()}
         >
           <Play />

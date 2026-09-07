@@ -25,9 +25,6 @@ export interface DroneStatus {
   position: Vector3
   orientation: Quaternion
   is_recording: boolean
-  online: boolean
-  connection_type: "bluetooth"
-  bluetooth_device_id?: string
   /** Present while a shot is actively being executed; absent otherwise */
   active_shot?: Shot
   /** Latest vision analysis; present only while the simulation is running */

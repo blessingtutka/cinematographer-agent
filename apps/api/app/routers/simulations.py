@@ -83,28 +83,47 @@ async def create_simulation(
     except Exception:
         pass  # Vision degrades gracefully if analysis is missing
 
-    selected_ids = request.drone_ids
-    rows = (
-        await db.execute(
-            select(DroneModel).where(
-                DroneModel.owner_id == user.id,
-                DroneModel.drone_id.in_(selected_ids),
+    selected_ids = list(dict.fromkeys(request.drone_ids))
+    if not selected_ids:
+        rows = (
+            await db.execute(
+                select(DroneModel)
+                .where(DroneModel.owner_id == user.id)
+                .order_by(DroneModel.created_at)
+                .limit(3)
             )
-        )
-    ).scalars().all()
+        ).scalars().all()
+        selected_ids = [drone.drone_id for drone in rows]
+    else:
+        rows = (
+            await db.execute(
+                select(DroneModel).where(
+                    DroneModel.owner_id == user.id,
+                    DroneModel.drone_id.in_(selected_ids),
+                )
+            )
+        ).scalars().all()
     missing = set(selected_ids) - {drone.drone_id for drone in rows}
     if missing:
         raise HTTPException(status_code=422, detail=f"Unknown drone(s): {', '.join(sorted(missing))}")
-    if not selected_ids:
+    if not rows:
         raise HTTPException(status_code=409, detail="Select at least one registered drone")
-    offline = [drone.name for drone in rows if not drone.online]
-    if offline:
-        raise HTTPException(status_code=409, detail=f"Connect all selected drones before starting: {', '.join(offline)}")
     plan_names = {shot.drone_name for shot in shot_plan.shots}
     selected_names = {drone.name for drone in rows}
     unavailable_names = plan_names - selected_names
     if unavailable_names:
-        raise HTTPException(status_code=409, detail=f"Select drones used by the shot plan: {', '.join(sorted(unavailable_names))}")
+        if len(rows) == 1:
+            selected_name = rows[0].name
+            shot_plan = shot_plan.model_copy(
+                update={
+                    "shots": [
+                        shot.model_copy(update={"drone_name": selected_name})
+                        for shot in shot_plan.shots
+                    ]
+                }
+            )
+        else:
+            raise HTTPException(status_code=409, detail=f"Select drones used by the shot plan: {', '.join(sorted(unavailable_names))}")
 
     simulation_id = str(uuid4())
     row = SimulationModel(simulation_id=simulation_id, scene_id=request.scene_id, state=SimulationState.CREATED.value)
@@ -118,8 +137,6 @@ async def create_simulation(
                 drone_id=drone.drone_id,
                 name=drone.name,
                 home_position=Vector3(x=0, y=1.8, z=0),
-                online=drone.online,
-                bluetooth_device_id=drone.bluetooth_device_id,
             )
         )
     engines[simulation_id] = SimulationEngine(

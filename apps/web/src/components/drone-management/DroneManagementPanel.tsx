@@ -1,5 +1,5 @@
 import type { DroneStatus } from "@ca/shared-types"
-import { Bluetooth, Camera, Check, Pencil, Plus, Trash2, Unplug, Wifi } from "lucide-react"
+import { Camera, Check, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -26,16 +26,6 @@ type DroneManagementPanelProps = {
   onError: (message: string) => void
 }
 
-type BluetoothNavigator = Navigator & {
-  bluetooth?: {
-    requestDevice: (options: { acceptAllDevices: boolean }) => Promise<{
-      id: string
-      name?: string
-      gatt?: { connect: () => Promise<unknown> }
-    }>
-  }
-}
-
 export function DroneManagementPanel({
   drones,
   selectedDroneIds,
@@ -46,7 +36,6 @@ export function DroneManagementPanel({
   const [newName, setNewName] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
-  const [busyId, setBusyId] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<DroneStatus | null>(null)
 
   async function addDrone(event: { preventDefault: () => void }) {
@@ -62,35 +51,6 @@ export function DroneManagementPanel({
       setNewName("")
     } catch (reason: unknown) {
       onError(reason instanceof Error ? reason.message : "Could not register the drone.")
-    }
-  }
-
-  async function connect(drone: DroneStatus) {
-    setBusyId(drone.drone_id)
-    try {
-      const bluetooth = (navigator as BluetoothNavigator).bluetooth
-      const device = bluetooth
-        ? await bluetooth.requestDevice({ acceptAllDevices: true })
-        : undefined
-      await device?.gatt?.connect()
-      const updated = await dronesService.connect(drone.drone_id, device?.id)
-      onDronesChange(drones.map((item) => (item.drone_id === updated.drone_id ? updated : item)))
-    } catch (reason: unknown) {
-      onError(reason instanceof Error ? reason.message : "Bluetooth connection was not completed.")
-    } finally {
-      setBusyId(null)
-    }
-  }
-
-  async function disconnect(drone: DroneStatus) {
-    setBusyId(drone.drone_id)
-    try {
-      const updated = await dronesService.disconnect(drone.drone_id)
-      onDronesChange(drones.map((item) => (item.drone_id === updated.drone_id ? updated : item)))
-    } catch (reason: unknown) {
-      onError(reason instanceof Error ? reason.message : "Could not disconnect the drone.")
-    } finally {
-      setBusyId(null)
     }
   }
 
@@ -132,12 +92,11 @@ export function DroneManagementPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            <Bluetooth className="size-3.5 text-primary" /> Drone bay
+            <Camera className="size-3.5 text-primary" /> Drone bay
           </p>
           <h2 className="mt-1 text-xl font-semibold">Register the aircraft for this take</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Pair a phone or drone over Bluetooth, then select the aircraft that should be replaced
-            by virtual drones during simulation.
+            Register the aircraft that should fly the generated shot plan in the virtual stage.
           </p>
         </div>
         <Badge variant={drones.length > 0 ? "outline" : "destructive"}>
@@ -194,33 +153,19 @@ export function DroneManagementPanel({
               ) : (
                 <p className="truncate font-medium">{drone.name}</p>
               )}
-              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <Wifi className="size-3" /> {drone.online ? "Online" : "Offline"} · Bluetooth
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Virtual camera ready</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-1">
-              {drone.online && (
-                <Button
-                  asChild
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={`View ${drone.name} camera`}
-                >
-                  <Link to={`/drones?drone=${encodeURIComponent(drone.drone_id)}#camera-feeds`}>
-                    <Camera />
-                  </Link>
-                </Button>
-              )}
               <Button
+                asChild
                 type="button"
-                size="sm"
-                variant={drone.online ? "outline" : "secondary"}
-                disabled={busyId === drone.drone_id}
-                onClick={() => void (drone.online ? disconnect(drone) : connect(drone))}
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`View ${drone.name} camera`}
               >
-                {drone.online ? <Unplug /> : <Bluetooth />}
-                {drone.online ? "Disconnect" : "Pair"}
+                <Link to={`/drones?drone=${encodeURIComponent(drone.drone_id)}#camera-feeds`}>
+                  <Camera />
+                </Link>
               </Button>
               <Button
                 type="button"
@@ -250,7 +195,9 @@ export function DroneManagementPanel({
       <AlertDialog
         open={removeTarget !== null}
         onOpenChange={(open) => {
-          if (!open) {setRemoveTarget(null)}
+          if (!open) {
+            setRemoveTarget(null)
+          }
         }}
       >
         <AlertDialogContent>
@@ -265,7 +212,9 @@ export function DroneManagementPanel({
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                if (removeTarget) {void remove(removeTarget)}
+                if (removeTarget) {
+                  void remove(removeTarget)
+                }
               }}
             >
               Remove drone

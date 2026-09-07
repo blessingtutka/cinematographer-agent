@@ -6,11 +6,8 @@ import { getErrorMessage } from "@/lib/utils/error-handler"
 import api from "./axios.service"
 
 export const dronesService = {
-  create: async (name: string, bluetoothDeviceId?: string): Promise<DroneStatus> => {
-    const { data } = await api.post<DroneStatus>("/drones", {
-      name,
-      bluetooth_device_id: bluetoothDeviceId,
-    })
+  create: async (name: string): Promise<DroneStatus> => {
+    const { data } = await api.post<DroneStatus>("/drones", { name })
     return data
   },
   list: async (): Promise<DroneStatus[]> => {
@@ -33,26 +30,12 @@ export const dronesService = {
     }
   },
 
-  update: async (droneId: string, payload: { name?: string; bluetooth_device_id?: string }) => {
+  update: async (droneId: string, payload: { name?: string }) => {
     const { data } = await api.patch<DroneStatus>(`/drones/${encodeURIComponent(droneId)}`, payload)
     return data
   },
 
   remove: async (droneId: string) => {
     await api.delete(`/drones/${encodeURIComponent(droneId)}`)
-  },
-
-  connect: async (droneId: string, bluetoothDeviceId?: string): Promise<DroneStatus> => {
-    const { data } = await api.post<DroneStatus>(`/drones/${encodeURIComponent(droneId)}/connect`, {
-      bluetooth_device_id: bluetoothDeviceId,
-    })
-    return data
-  },
-
-  disconnect: async (droneId: string): Promise<DroneStatus> => {
-    const { data } = await api.post<DroneStatus>(
-      `/drones/${encodeURIComponent(droneId)}/disconnect`,
-    )
-    return data
   },
 }

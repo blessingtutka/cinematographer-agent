@@ -31,12 +31,26 @@ export function DirectorViewPanel({
         </span>
       </div>
       <div className="h-108 bg-slate-950 ring-1 ring-inset ring-white/10">
-        <Canvas camera={{ position: [8, 7, 10], fov: 42 }}>
+        <Canvas shadows dpr={[1, 2]} camera={{ position: [8, 7, 10], fov: 42 }}>
           <color attach="background" args={["#080b12"]} />
-          <ambientLight intensity={1.3} />
-          <directionalLight position={[4, 8, 5]} intensity={2} color="#f6e7c1" />
+          <fog attach="fog" args={["#080b12", 12, 32]} />
+          <ambientLight intensity={0.7} />
+          <directionalLight
+            castShadow
+            position={[4, 9, 5]}
+            intensity={2.4}
+            color="#f6e7c1"
+            shadow-mapSize={[2048, 2048]}
+          />
+          <pointLight position={[-6, 3, 2]} intensity={12} distance={14} color="#38bdf8" />
           <StageScene drones={drones} analysis={analysis} plan={plan} paused={paused} />
-          <OrbitControls makeDefault enableDamping minDistance={5} maxDistance={30} />
+          <OrbitControls
+            makeDefault
+            enableDamping
+            minDistance={5}
+            maxDistance={26}
+            target={[0, 1, -1]}
+          />
         </Canvas>
       </div>
     </section>

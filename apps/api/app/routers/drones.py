@@ -22,16 +22,10 @@ router = APIRouter(
 
 class DroneCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    bluetooth_device_id: str | None = Field(default=None, max_length=200)
 
 
 class DroneUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=80)
-    bluetooth_device_id: str | None = Field(default=None, max_length=200)
-
-
-class DroneConnectionRequest(BaseModel):
-    bluetooth_device_id: str | None = Field(default=None, max_length=200)
 
 
 def get_drone_manager(request: Request) -> DroneManager:
@@ -43,8 +37,6 @@ def _runtime(row: DroneModel, manager: DroneManager) -> VirtualDrone:
         drone_id=row.drone_id,
         name=row.name,
         home_position=Vector3(x=0, y=1.8, z=0),
-        online=row.online,
-        bluetooth_device_id=row.bluetooth_device_id,
     )
     manager.register(runtime)
     return runtime
@@ -100,7 +92,6 @@ async def create_drone(
         drone_id=f"drone-{uuid4().hex[:12]}",
         owner_id=user.id,
         name=payload.name,
-        bluetooth_device_id=payload.bluetooth_device_id,
     )
     db.add(row)
     await db.flush()
@@ -128,8 +119,6 @@ async def update_drone(
     row = await _owned_drone(drone_id, user, db)
     if payload.name is not None:
         row.name = payload.name
-    if payload.bluetooth_device_id is not None:
-        row.bluetooth_device_id = payload.bluetooth_device_id
     await db.flush()
     return _status(row, manager)
 
@@ -146,30 +135,3 @@ async def delete_drone(
     manager.remove(drone_id)
 
 
-@router.post("/{drone_id}/connect")
-async def connect_drone(
-    drone_id: str,
-    payload: DroneConnectionRequest,
-    user: UserModel = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-    manager: DroneManager = Depends(get_drone_manager),
-) -> dict:
-    row = await _owned_drone(drone_id, user, db)
-    row.online = True
-    if payload.bluetooth_device_id is not None:
-        row.bluetooth_device_id = payload.bluetooth_device_id
-    await db.flush()
-    return _status(row, manager)
-
-
-@router.post("/{drone_id}/disconnect")
-async def disconnect_drone(
-    drone_id: str,
-    user: UserModel = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-    manager: DroneManager = Depends(get_drone_manager),
-) -> dict:
-    row = await _owned_drone(drone_id, user, db)
-    row.online = False
-    await db.flush()
-    return _status(row, manager)

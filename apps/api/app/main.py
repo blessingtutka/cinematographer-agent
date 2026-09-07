@@ -89,6 +89,7 @@ async def simulation_websocket(websocket: WebSocket, simulation_id: str) -> None
             for drone in engine.drone_manager.get_all()
         ],
     })
+    await websocket.send_json(engine._state_event())
     try:
         while True:
             await websocket.receive_text()

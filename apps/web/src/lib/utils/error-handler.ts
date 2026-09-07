@@ -1,11 +1,13 @@
-import { isAxiosError } from 'axios';
+import { isAxiosError } from "axios"
 
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {
-    return error.response?.data?.message ?? error.message ?? fallback;
+    return (
+      error.response?.data?.detail ?? error.response?.data?.message ?? error.message ?? fallback
+    )
   }
   if (error instanceof Error) {
-    return error.message;
+    return error.message
   }
-  return fallback;
+  return fallback
 }

@@ -1,5 +1,7 @@
 """In-memory drone implementation used by the simulation."""
 
+import math
+
 from cinematography_schema.schema import (
     CameraFeed,
     CameraMovement,
@@ -12,6 +14,14 @@ from cinematography_schema.schema import (
 
 from .base import Drone
 
+STAGE_X_LIMIT = 8.0
+STAGE_Z_MIN = -5.0
+STAGE_Z_MAX = 5.0
+
+
+def _clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
+
 
 class VirtualDrone(Drone):
     def __init__(
@@ -19,16 +29,13 @@ class VirtualDrone(Drone):
         drone_id: str,
         name: str,
         home_position: Vector3 | None = None,
-        online: bool = False,
-        bluetooth_device_id: str | None = None,
     ) -> None:
         self.drone_id = drone_id
         self.name = name
-        self.online = online
-        self.bluetooth_device_id = bluetooth_device_id
         self.home_position = home_position or Vector3(x=0, y=0, z=0)
         self.current_position = self.home_position.model_copy()
         self.current_orientation = {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}
+        self.subject_position: Vector3 | None = None
         self.active_shot: Shot | None = None
         self.is_recording = False
         self.trajectory: Trajectory | None = None
@@ -44,30 +51,45 @@ class VirtualDrone(Drone):
         self.trajectory_progress = 0.0
         self.move_to(self._trajectory_for(shot))
 
+    def set_subject_position(self, position: Vector3) -> None:
+        self.subject_position = position.model_copy()
+
     def _trajectory_for(self, shot: Shot) -> Trajectory:
         """Create a visible, deterministic path for the requested camera move."""
         start = self.current_position.model_copy()
-        movement_offsets = {
-            CameraMovement.DOLLY_IN: (0.0, 0.15, -2.4),
-            CameraMovement.DOLLY_OUT: (0.0, 0.4, 2.4),
-            CameraMovement.MOVE_TO: (2.2, 0.7, -2.0),
-            CameraMovement.TRACK: (2.6, 0.25, -1.2),
-            CameraMovement.FOLLOW: (1.8, 0.8, -1.8),
-            CameraMovement.ORBIT: (2.2, 0.5, -2.2),
-            CameraMovement.PAN: (0.8, 0.15, -0.8),
-            CameraMovement.TILT: (-0.8, 0.4, -0.8),
-            CameraMovement.STATIC: (0.0, 0.0, 0.0),
-        }
-        dx, dy, dz = movement_offsets[shot.camera_movement]
+        subject = self.subject_position
+        if subject is None:
+            subject = Vector3(x=start.x, y=0.95, z=start.z - 3.0)
+
+        to_subject_x = subject.x - start.x
+        to_subject_z = subject.z - start.z
+        distance = math.hypot(to_subject_x, to_subject_z)
+        if distance < 0.1:
+            to_subject_x, to_subject_z, distance = 0.0, -1.0, 1.0
+
+        framing_distance = {
+            "WIDE": 3.8,
+            "MEDIUM": 2.6,
+            "CLOSE_UP": 1.7,
+            "EXTREME_CLOSE_UP": 1.15,
+            "OVER_SHOULDER": 2.2,
+            "LOW_ANGLE": 2.8,
+            "HIGH_ANGLE": 2.8,
+        }.get(shot.shot_type.value, 2.6)
+        direction_x = to_subject_x / distance
+        direction_z = to_subject_z / distance
+        lateral = {CameraMovement.ORBIT: 0.8, CameraMovement.TRACK: 0.45}.get(
+            shot.camera_movement, 0.0
+        )
         end = Vector3(
-            x=start.x + dx,
-            y=max(1.2, start.y + dy),
-            z=start.z + dz,
+            x=_clamp(subject.x - direction_x * framing_distance - direction_z * lateral, -STAGE_X_LIMIT, STAGE_X_LIMIT),
+            y=max(1.2, subject.y + (0.65 if shot.shot_type.value == "HIGH_ANGLE" else 0.2)),
+            z=_clamp(subject.z - direction_z * framing_distance + direction_x * lateral, STAGE_Z_MIN, STAGE_Z_MAX),
         )
         midpoint = Vector3(
-            x=start.x + dx * 0.45,
-            y=max(1.2, start.y + max(dy * 0.45, 0.25)),
-            z=start.z + dz * 0.45,
+            x=start.x + (end.x - start.x) * 0.45,
+            y=max(1.2, start.y + (end.y - start.y) * 0.45),
+            z=start.z + (end.z - start.z) * 0.45,
         )
         return Trajectory(points=[start, midpoint, end], duration_seconds=shot.duration_seconds)
 
@@ -87,9 +109,6 @@ class VirtualDrone(Drone):
             position=self.current_position.model_copy(),
             orientation=dict(self.current_orientation),
             is_recording=self.is_recording,
-            online=self.online,
-            connection_type="bluetooth",
-            bluetooth_device_id=self.bluetooth_device_id,
             active_shot=self.active_shot,
             vision=self.latest_vision,
         )
