@@ -68,8 +68,11 @@ function Auth() {
         setPreTwoFactorToken(result.preTwoFactorToken)
         setTwoFactorOpen(true)
       } else {
+        toast.success("Signed in successfully")
         navigate(destination, { replace: true })
       }
+    } catch {
+      return
     } finally {
       setIsSubmitting(false)
     }
@@ -81,7 +84,10 @@ function Auth() {
     try {
       await verifyTwoFactor(preTwoFactorToken, code)
       setTwoFactorOpen(false)
+      toast.success("Signed in successfully")
       navigate(destination, { replace: true })
+    } catch {
+      return
     } finally {
       setIsSubmitting(false)
     }

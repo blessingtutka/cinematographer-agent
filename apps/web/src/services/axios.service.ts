@@ -37,12 +37,22 @@ function flushQueue(error: unknown, token: string | null) {
   pendingQueue = []
 }
 
+function isPublicAuthRequest(url: string | undefined): boolean {
+  return ["/auth/login", "/auth/register", "/auth/2fa/login-verify", "/auth/refresh"].some(
+    (path) => url?.includes(path) === true,
+  )
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableConfig | undefined
 
     if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
+      throw error
+    }
+
+    if (isPublicAuthRequest(originalRequest.url)) {
       throw error
     }
 

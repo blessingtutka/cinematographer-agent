@@ -327,11 +327,16 @@ export default function AccountSettings() {
   // Subscription
   const [tierLimits, setTierLimits] = useState<TierLimits | null>(null)
   const [quota, setQuota] = useState<ProjectQuota | null>(null)
-  const [tierBusy, setTierBusy] = useState<SubscriptionTier | null>(null)
 
   useEffect(() => {
-    void subscriptionService.getTiers().then(setTierLimits)
-    void subscriptionService.getQuota().then(setQuota)
+    void subscriptionService
+      .getTiers()
+      .then(setTierLimits)
+      .catch(() => setTierLimits(null))
+    void subscriptionService
+      .getQuota()
+      .then(setQuota)
+      .catch(() => setQuota(null))
   }, [])
 
   if (!user) {
@@ -360,18 +365,6 @@ export default function AccountSettings() {
   async function handleRegenerateCodes() {
     const codes = await authService.regenerateBackupCodes()
     setBackupCodes(codes)
-  }
-
-  async function handleChangeTier(tier: SubscriptionTier) {
-    setTierBusy(tier)
-    try {
-      await subscriptionService.changeTier(tier)
-      await refreshUser()
-      // Re-fetch quota after tier change
-      void subscriptionService.getQuota().then(setQuota)
-    } finally {
-      setTierBusy(null)
-    }
   }
 
   return (
@@ -407,6 +400,10 @@ export default function AccountSettings() {
           </div>
 
           <Separator />
+
+          <p className="border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-xs leading-5 text-muted-foreground">
+            Subscription changes are temporarily unavailable. Your current plan remains active.
+          </p>
 
           <dl className="grid gap-3 text-sm">
             <div className="flex items-center justify-between gap-4">
@@ -574,14 +571,10 @@ export default function AccountSettings() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={tierBusy !== null}
-                          onClick={() => void handleChangeTier(tier)}
+                          disabled
+                          title="Subscription changes are not available yet"
                         >
-                          {tierBusy === tier ? (
-                            <Loader2 className="size-3 animate-spin" />
-                          ) : (
-                            "Switch"
-                          )}
+                          Unavailable
                         </Button>
                       )}
                     </div>
