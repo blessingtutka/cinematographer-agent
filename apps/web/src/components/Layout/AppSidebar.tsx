@@ -1,12 +1,4 @@
-import {
-  Activity,
-  Camera,
-  Clapperboard,
-  FolderKanban,
-  LayoutDashboard,
-  Settings2,
-  Sparkles,
-} from "lucide-react"
+import { Camera, FolderKanban, LayoutDashboard, Settings2, Sparkles } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 import {
@@ -33,15 +25,8 @@ type AppSidebarProps = {
 
 const workspaceLinks = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
-  { label: "Control room", href: "/studio", icon: LayoutDashboard },
+  { label: "Studio", href: "/studio", icon: LayoutDashboard },
   { label: "Drones", href: "/drones", icon: Camera },
-  { label: "Scene input", href: "/studio/input", icon: Clapperboard },
-  { label: "Shot plan", href: "/studio#shot-plan", icon: Camera },
-]
-
-const monitorLinks = [
-  { label: "Director view", href: "/studio#director-view", icon: Activity },
-  { label: "Camera feeds", href: "/studio#camera-feeds", icon: Camera },
 ]
 
 export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
@@ -81,23 +66,6 @@ export function AppSidebar({ user, onSignOut }: AppSidebarProps) {
                     isActive={item.href === "/studio" && location.pathname === "/studio"}
                     tooltip={item.label}
                   >
-                    <a href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Monitors</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {monitorLinks.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild tooltip={item.label}>
                     <a href={item.href}>
                       <item.icon />
                       <span>{item.label}</span>
