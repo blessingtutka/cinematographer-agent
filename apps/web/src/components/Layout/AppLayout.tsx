@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useUser } from "@/providers/user.provider"
 
 import { AppHeader } from "./AppHeader"
+import ScrollToTop from "./ScrollToTop"
 
 export type AppLayoutProps = {
   breadcrumb?: BreadcrumbItem[]
@@ -16,6 +17,7 @@ export function AppLayout({ breadcrumb, children }: AppLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen>
+      <ScrollToTop />
       <AppSidebar user={user} onSignOut={signOut} />
       <SidebarInset>
         <AppHeader breadcrumb={breadcrumb} />

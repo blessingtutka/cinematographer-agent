@@ -40,6 +40,7 @@ function Header({ links = siteNavLinks }: HeaderProps) {
               <Link
                 key={link.href}
                 to={link.href}
+                reloadDocument={link.href.startsWith("/#")}
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
@@ -80,6 +81,7 @@ function Header({ links = siteNavLinks }: HeaderProps) {
             <Link
               key={link.href}
               to={link.href}
+              reloadDocument={link.href.startsWith("/#")}
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-base font-medium text-foreground/80 hover:text-foreground"
             >
