@@ -8,39 +8,52 @@ import { Card } from "@/components/ui/card"
 const architecture = [
   {
     icon: Sparkles,
-    title: "AI orchestration",
+    title: "Scene analysis and shot planning",
     description:
-      "Specialized agents analyze scenes, research references, and produce a validated shot plan.",
+      "Gemini-backed agents turn screenplay text into editable scene metadata and a structured shot plan. Parallel Web supplies research results that ground cinematography recommendations.",
   },
   {
     icon: Server,
-    title: "FastAPI services",
+    title: "FastAPI application layer",
     description:
-      "The API exposes scene, shot-plan, drone, and simulation workflows to the web client.",
+      "Authenticated API routes manage projects, scenes, shot plans, registered drones, and simulation commands for the studio workspace.",
   },
   {
     icon: Radio,
-    title: "Live simulation",
+    title: "Virtual production runtime",
     description:
-      "WebSockets stream virtual drone state so the preview remains synchronized in real time.",
+      "The simulation engine executes a shot plan for selected virtual drones. WebSockets stream drone state, camera activity, and AI vision updates to the browser.",
   },
   {
     icon: Database,
-    title: "Structured persistence",
+    title: "Persistent production data",
     description:
-      "PostgreSQL and Alembic keep scenes, plans, and simulation data consistent and inspectable.",
+      "Projects, scenes, shot plans, drones, and simulation records are stored through SQLAlchemy models and tracked with Alembic migrations.",
   },
 ]
 
 const stack = [
+  "Python 3.11+",
   "React",
   "TypeScript",
   "Vite",
+  "React Three Fiber",
+  "Three.js",
+  "Tailwind CSS",
+  "Framer Motion",
   "FastAPI",
+  "Uvicorn",
   "Pydantic",
   "Gemini",
+  "Parallel Web",
+  "SQLAlchemy",
+  "Alembic",
+  "asyncpg",
   "WebSockets",
   "PostgreSQL",
+  "JWT",
+  "TOTP / QR codes",
+  "Shared Pydantic schemas",
 ]
 
 function Technical() {
@@ -60,13 +73,23 @@ function Technical() {
               Technical Overview
             </Badge>
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
-              A production pipeline for <span className="text-primary">cinematic decisions.</span>
+              A studio for turning scenes into <span className="text-primary">testable shots.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Cinematographer Agent connects structured AI analysis, shared schemas, and a live
-              drone simulation into one workflow for exploring and validating shot plans.
+              The web app takes a screenplay scene from first analysis to editable coverage and a
+              live virtual-drone run, so camera decisions can be inspected before a physical shoot.
             </p>
           </motion.div>
+
+          <section className="mt-16 max-w-4xl border-t border-border/60 pt-10">
+            <h2 className="text-lg font-semibold">What the studio actually does</h2>
+            <p className="mt-3 leading-relaxed text-muted-foreground">
+              A user selects a project, submits scene text, reviews the AI-generated breakdown,
+              chooses up to three registered drones, and creates a shot plan. The coverage and
+              simulation stages then expose the plan as camera movements, director view, camera
+              feeds, and in-flight vision analysis.
+            </p>
+          </section>
 
           <div className="mt-16 grid gap-6 md:grid-cols-2">
             {architecture.map((item, index) => {

@@ -8,6 +8,7 @@ import {
   Code,
   Drone,
   Film,
+  FolderKanban,
   Layers3,
   Move3D,
   Play,
@@ -16,13 +17,18 @@ import {
   Video,
   Zap,
 } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { SiteLayout } from "@/components/Layout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useUser } from "@/providers/user.provider"
 
 function Home() {
+  const { isAuthenticated } = useUser()
+  const studioHref = isAuthenticated ? "/studio" : "/auth"
+  const studioLabel = isAuthenticated ? "Open the Studio" : "Start in the Studio"
   const { scrollY } = useScroll()
   const heroOpacity = useTransform(scrollY, [0, 450], [1, 0.35])
   const heroScale = useTransform(scrollY, [0, 450], [1, 0.96])
@@ -58,31 +64,31 @@ function Home() {
   const workflow = [
     {
       number: "01",
-      icon: Film,
-      title: "Provide a Scene",
+      icon: FolderKanban,
+      title: "Choose a Project",
       description:
-        "Start with a screenplay scene containing the dialogue, characters, and actions.",
+        "Create or select a production so its scenes, shot plans, and simulation runs stay together.",
     },
     {
       number: "02",
-      icon: Brain,
-      title: "AI Understands It",
+      icon: Film,
+      title: "Submit the Scene",
       description:
-        "The AI analyzes the scene and identifies the elements that matter for cinematography.",
+        "Paste in screenplay text. Scene analysis extracts the title, description, characters, actions, and beats.",
     },
     {
       number: "03",
       icon: Camera,
-      title: "Create the Shot Plan",
+      title: "Build Coverage",
       description:
-        "A cinematography plan is generated with shots, camera movements, perspectives, and assignments.",
+        "Review or edit the analysis, select up to three virtual drones, and generate a structured shot plan.",
     },
     {
       number: "04",
       icon: Move3D,
-      title: "Preview in 3D",
+      title: "Run the Simulation",
       description:
-        "The virtual drones execute the plan so the director can see the result in a simulated environment.",
+        "Start, pause, and stop the virtual production while watching the director view, camera feeds, and vision updates.",
     },
   ]
 
@@ -149,18 +155,26 @@ function Home() {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <Button className="group bg-primary px-6 text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/80 hover:shadow-primary/40">
-              <CirclePlay className="mr-2 h-4 w-4" />
-              Explore the Simulation
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <Button
+              asChild
+              className="group bg-primary px-6 text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/80 hover:shadow-primary/40"
+            >
+              <Link to={studioHref}>
+                <CirclePlay className="mr-2 h-4 w-4" />
+                {studioLabel}
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
 
             <Button
+              asChild
               variant="outline"
               className="border-border bg-transparent px-6 text-foreground hover:bg-muted"
             >
-              <Code className="mr-2 h-4 w-4" />
-              View Project
+              <Link to="/technical">
+                <Code className="mr-2 h-4 w-4" />
+                Technical Overview
+              </Link>
             </Button>
           </motion.div>
 
@@ -537,17 +551,25 @@ function Home() {
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button className="bg-primary px-6 text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/80">
-              <Play className="mr-2 h-4 w-4" />
-              Launch Demo
+            <Button
+              asChild
+              className="bg-primary px-6 text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/80"
+            >
+              <Link to={studioHref}>
+                <Play className="mr-2 h-4 w-4" />
+                {studioLabel}
+              </Link>
             </Button>
 
             <Button
+              asChild
               variant="outline"
               className="border-border bg-transparent px-6 text-foreground hover:bg-muted hover:text-secondary"
             >
-              Technical Overview
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <Link to="/technical">
+                Technical Overview
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </motion.div>
