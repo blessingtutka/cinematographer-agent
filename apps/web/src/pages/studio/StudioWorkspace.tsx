@@ -199,7 +199,7 @@ export function StudioWorkspace() {
 
   // -- Restore scene from URL param; navigate straight to analysis --
   useEffect(() => {
-    if (!sceneId) {
+    if (!sceneId || analysis?.scene_id === sceneId) {
       return
     }
     // Restore state mirrors an external database request lifecycle.
@@ -243,7 +243,7 @@ export function StudioWorkspace() {
       active = false
       setRestoring(false)
     }
-  }, [sceneId, projectId, navigate])
+  }, [analysis?.scene_id, sceneId, projectId, navigate])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
