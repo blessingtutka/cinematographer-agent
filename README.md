@@ -1,6 +1,12 @@
 # Cinematographer Agent
 
-A monorepo containing the **Cinematographer Agent** application: a React frontend and a FastAPI backend.
+A monorepo containing the **Cinematographer Agent** application: a React and Three.js frontend with
+a FastAPI backend for AI-assisted scene analysis, shot planning, and virtual-drone simulation.
+
+The application helps a director move from screenplay text to inspectable camera decisions. A user
+creates or selects a project, submits a scene, reviews the AI-generated analysis, chooses up to three
+registered virtual drones, generates coverage, and runs the shot plan in the live studio. The studio
+shows the director view, camera feeds, simulation state, and in-flight vision updates.
 
 This document describes the project structure and the commands required for:
 
@@ -24,11 +30,13 @@ cinematographer-agent/
 ├── apps/
 │   ├── api/                         # FastAPI backend
 │   │   ├── app/
-│   │   │   ├── api/                 # API routes
 │   │   │   ├── core/                # Configuration/security
 │   │   │   ├── db/                  # Database connection/Base
 │   │   │   ├── models/              # SQLAlchemy models
-│   │   │   ├── schemas/             # Pydantic schemas
+│   │   │   ├── agents/              # Scene, research, vision, and shot-planning agents
+│   │   │   ├── routers/              # FastAPI route handlers
+│   │   │   ├── drone/                # Virtual drone implementations
+│   │   │   ├── simulation/           # Simulation engine and WebSocket streaming
 │   │   │   ├── services/            # Business logic
 │   │   │   └── main.py              # FastAPI application
 │   │   │
@@ -50,7 +58,9 @@ cinematographer-agent/
 │       ├── package.json
 │       └── ...
 │
-├── package.json                     # Monorepo scripts
+├── packages/
+│   └── cinematography-schema/       # Shared Pydantic/domain schemas
+├── package.json                     # pnpm/Turbo monorepo scripts
 ├── README.md
 └── .gitignore
 ```
@@ -61,10 +71,10 @@ cinematographer-agent/
 
 Install the following tools before starting development:
 
-- Python 3.12+
+- Python 3.11+
 - UV
 - Node.js 20+
-- npm / pnpm
+- pnpm 9+
 - PostgreSQL
 - Git
 
@@ -74,7 +84,7 @@ Verify:
 python --version
 uv --version
 node --version
-npm --version
+pnpm --version
 psql --version
 ```
 
@@ -89,11 +99,10 @@ git clone <repository-url>
 cd cinematographer-agent
 ```
 
-Install frontend dependencies:
+Install workspace dependencies:
 
 ```bash
-cd apps/web
-npm install
+pnpm install
 ```
 
 Install backend dependencies:
@@ -110,6 +119,20 @@ apps/api/.venv/
 ```
 
 The virtual environment should **not** be committed.
+
+## Architecture and technology
+
+- **Frontend:** React 19, TypeScript, Vite, React Router, Tailwind CSS, Framer Motion, Three.js,
+  and React Three Fiber.
+- **Backend:** Python, FastAPI, Uvicorn, Pydantic, SQLAlchemy, Alembic, and PostgreSQL.
+- **AI workflow:** Gemini analyzes screenplay scenes and supports vision analysis. The research agent
+  uses Parallel Web to retrieve cinematography references before shot planning.
+- **Realtime simulation:** The simulation engine runs virtual drones and streams drone state,
+  camera activity, and vision events over authenticated WebSockets.
+- **Authentication:** JWT access and refresh tokens, email verification, and optional TOTP-based
+  two-factor authentication with QR codes.
+- **Shared contracts:** `packages/cinematography-schema` contains the domain models shared by the
+  API and client-facing types.
 
 ---
 
@@ -486,7 +509,7 @@ uv run pytest -v
 Run a specific test:
 
 ```bash
-uv run pytest tests/api/test_simulations.py
+uv run pytest tests/properties/test_simulation_state_machine.py
 ```
 
 Run with coverage if configured:
@@ -536,13 +559,13 @@ cd apps/web
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 Start development:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The frontend will normally be available at:
@@ -558,37 +581,37 @@ http://localhost:5173
 Typical commands:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Start development server.
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Create production build.
 
 ```bash
-npm run preview
+pnpm preview
 ```
 
 Preview the production build locally.
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 Run ESLint.
 
 ```bash
-npm run format
+pnpm format
 ```
 
 Format the project if configured.
 
 ```bash
-npm run typecheck
+pnpm typecheck
 ```
 
 Run TypeScript type checking if configured.
@@ -602,7 +625,7 @@ Frontend environment variables should be stored in the appropriate `.env` files.
 For Vite:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api
 ```
 
 Example:
@@ -635,7 +658,7 @@ uv run uvicorn app.main:app --reload
 
 ```bash
 cd apps/web
-npm run dev
+pnpm dev
 ```
 
 Architecture:
@@ -694,7 +717,7 @@ Build:
 
 ```bash
 cd apps/web
-npm run build
+pnpm build
 ```
 
 This generates the production assets, typically under:
@@ -784,10 +807,10 @@ Frontend:
 ```bash
 cd apps/web
 
-npm install
-npm run lint
-npm run typecheck
-npm run build
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm build
 ```
 
 Then:
@@ -873,22 +896,22 @@ uv run alembic history
 cd apps/web
 
 # Install
-npm install
+pnpm install
 
 # Development
-npm run dev
+pnpm dev
 
 # Lint
-npm run lint
+pnpm lint
 
 # Type checking
-npm run typecheck
+pnpm typecheck
 
 # Production build
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
 ```
 
 ---
@@ -998,9 +1021,9 @@ In another terminal:
 ```bash
 cd apps/web
 
-npm install
+pnpm install
 
-npm run dev
+pnpm dev
 ```
 
 The application is now running locally.
